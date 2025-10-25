@@ -1,5 +1,5 @@
 {
-  "name": "agi-cad",
+  "name": "agi-cad-core",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,10 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "firebase": "10.14.0",
+    "firebase": "^12.4.0",
+    "lucide-react": "^0.546.0",
     "next": "^14.2.33",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-hot-toast": "^2.6.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "autoprefixer": "10.4.19",
