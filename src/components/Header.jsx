@@ -1,6 +1,6 @@
 
 // src/components/Login.jsx
-import { signInWithGoogle } from '../../lib/firebase.js';
+import { signInWithGoogle } from '../lib/firebase.js';
 
 export default function Login() {
   return (

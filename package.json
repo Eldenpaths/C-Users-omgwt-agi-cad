@@ -11,6 +11,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
     "@octokit/rest": "^22.0.0",
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.4.0",
+    "@types/three": "^0.180.0",
     "firebase": "^12.4.0",
     "firebase-admin": "^13.5.0",
     "lucide-react": "^0.546.0",
@@ -18,10 +21,13 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hot-toast": "^2.6.0",
+    "three": "^0.180.0",
+    "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^24.9.1",
+    "@types/react": "19.2.2",
     "autoprefixer": "10.4.19",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.33",

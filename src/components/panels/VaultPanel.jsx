@@ -2,7 +2,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useFirestoreCollection } from "../../hooks/useFirestoreCollection.js";
-import { auth } from "../../firebase.js";
+import { auth } from "../../lib/firebase.js";
 
 export default function VaultPanel() {
   const uid = auth.currentUser?.uid;

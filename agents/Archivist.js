@@ -1,6 +1,6 @@
 // agents/Archivist.js
 import { addDoc, collection, getDocs, orderBy, query, limit, serverTimestamp } from "firebase/firestore";
-import { db } from "../lib/firebase.js";
+import { db } from "../src/lib/firebase.js";
 import { QueueService } from "../src/features/mission/QueueService.js";
 
 export class Archivist {

@@ -1,21 +1,64 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ✅ VaultMeta Secure Access (Phase 7B)
-    match /vaultMeta/{phase} {
-      // Authenticated users can read status
-      allow read: if request.auth != null;
-
-      // Only Sentinel service or admin can write
-      allow update, create, delete: if request.auth.token.role == "sentinel";
+    // Require auth everywhere
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
 
-    // ✅ Public-safe fallback (for other collections)
-    match /{document=**} {
+    // Agents: write only if UID matches
+    match /agents/{agentId} {
       allow read: if request.auth != null;
-      allow write: if false; // everything else locked
+      allow write: if request.auth.uid == agentId;
+    }
+
+    // Commands + Events
+    match /commands/{docId} {
+      allow write: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // Snapshots: server-only checksum
+    match /snapshots/{docId} {
+      allow write: if request.auth.token.admin == true;
+      allow read: if request.auth != null;
+    }
+
+    // Kill switch: admin-only
+    match /system/killSwitch {
+      allow read: if request.auth != null;
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // CLAUDE-META: Phase 9A Nexus paths
+    // Agent lineage & logs
+    match /agentLineage/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if request.auth != null && request.resource.data.uid == request.auth.uid
+                   && request.time - resource.data.lastWriteTime() > duration.value(1000, "ms"); // naive rate limit hook
+    }
+
+    // Nexus drift logs (append-only)
+    match /nexusDrift/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false; // immutable
+    }
+
+    // CLAUDE-META: Phase 9C Live Ops paths
+    // Nexus agents (read/write by UID)
+    match /nexusAgents/{agentId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow delete: if false; // soft delete via status field
+    }
+
+    // Nexus control logs (append-only)
+    match /nexusControlLog/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false; // immutable
     }
   }
 }

@@ -1,0 +1,175 @@
+{
+  "phase": "9A",
+  "title": "Meta-Agent Awareness & Recursive Intelligence Layer",
+  "status": "scaffolded",
+  "timestamp": "2025-10-27T12:25:00Z",
+  "directive": "Meta-Architecture Directive v2.0",
+  "architect": "ChatGPT (GPT-5)",
+  "executor": "Claude Code v2.0.27",
+
+  "components": {
+    "recursive_agents": {
+      "status": "scaffolded",
+      "location": "src/agents/meta/",
+      "files": ["RecursiveAgent.js"],
+      "capabilities": [
+        "observe() - Monitor other agent states",
+        "clone() - Create derivative agents",
+        "propose() - Suggest architectural changes"
+      ],
+      "security": "All actions gated through Turing Lock",
+      "known_agents": {
+        "buildsmith": { "type": "builder", "role": "construction" },
+        "corewright": { "type": "architect", "role": "design" },
+        "simwright": { "type": "simulator", "role": "validation" },
+        "echoengineer": { "type": "reflector", "role": "analysis" },
+        "loreblack": { "type": "historian", "role": "memory" },
+        "sketchforger": { "type": "designer", "role": "ideation" },
+        "shardweaver": { "type": "integrator", "role": "synthesis" }
+      }
+    },
+
+    "security_division": {
+      "status": "scaffolded",
+      "location": "src/agents/security/",
+      "files": ["MitnickGPT.js"],
+      "agents": {
+        "mitnick": {
+          "name": "MitnickGPT™",
+          "role": "intrusion_detection",
+          "capabilities": [
+            "Network perimeter scanning",
+            "Agent identity verification",
+            "Spoof detection",
+            "Security event logging"
+          ],
+          "thresholds": {
+            "maxCloneDepth": 3,
+            "maxObservationsPerMinute": 100,
+            "maxProposalsPerHour": 10
+          }
+        },
+        "turing": {
+          "name": "TuringLock™",
+          "role": "logic_gate",
+          "status": "placeholder"
+        },
+        "glyph": {
+          "name": "GlyphCrypt™",
+          "role": "encryption",
+          "status": "placeholder"
+        },
+        "echo": {
+          "name": "EchoRadar™",
+          "role": "communication_monitor",
+          "status": "placeholder"
+        },
+        "soul": {
+          "name": "SoulGuardian™",
+          "role": "vault_integrity",
+          "status": "placeholder"
+        }
+      },
+      "log_path": "/agents/logs/security/"
+    },
+
+    "liquid_substrate": {
+      "status": "scaffolded",
+      "location": "src/lib/liquid/",
+      "files": ["stateFlow.ts"],
+      "concept": "Fluid intelligence system with dynamic knowledge flow",
+      "metrics": {
+        "viscosity": "Resistance to change (0=instant, 1=frozen)",
+        "surface_tension": "Autonomy boundary (0=shared, 1=isolated)",
+        "flow_rate": "Information transfer speed"
+      },
+      "channels": {
+        "knowledge_broadcast": {
+          "type": "broadcast",
+          "capacity": 5000,
+          "flowRate": 1.0,
+          "description": "All agents can read"
+        },
+        "memory_pool": {
+          "type": "pooled",
+          "capacity": 10000,
+          "flowRate": 0.8,
+          "description": "Shared persistent memory"
+        },
+        "control_signals": {
+          "type": "directed",
+          "capacity": 1000,
+          "flowRate": 1.0,
+          "description": "Directed agent commands"
+        },
+        "observation_stream": {
+          "type": "broadcast",
+          "capacity": 2000,
+          "flowRate": 0.9,
+          "description": "Meta-agent observations"
+        }
+      }
+    }
+  },
+
+  "governance": {
+    "canonical_architect": "ChatGPT (GPT-5)",
+    "execution_engine": "Claude Code v2.0.27",
+    "protocol": "Unified Build Protocol v1.0",
+    "markers": {
+      "meta_code": "// CLAUDE-META",
+      "meta_prototypes": "_meta_ref variants",
+      "state_persistence": "Vault/meta/"
+    }
+  },
+
+  "roadmap": {
+    "phase_8c": {
+      "title": "Glyph UI + Agent HUD Integration",
+      "status": "complete"
+    },
+    "phase_9a": {
+      "title": "Meta-Agent Awareness",
+      "status": "scaffolded",
+      "awaiting": "Phase 9A Manifest from Architect"
+    },
+    "phase_9b": {
+      "title": "Reflexive Glyph Scripting",
+      "status": "planned",
+      "description": "Agents author glyphs"
+    },
+    "phase_9c": {
+      "title": "Distributed Cognition Lattice",
+      "status": "planned",
+      "description": "Multi-user fusion"
+    },
+    "phase_10a": {
+      "title": "Reflexive Redesign",
+      "status": "planned",
+      "description": "System evolves its own tools"
+    },
+    "phase_10b": {
+      "title": "Governance AI & Ethical Sentinels",
+      "status": "planned",
+      "description": "Safety and ethics layer"
+    }
+  },
+
+  "participation_model": {
+    "status": "planned",
+    "concept": "Average users help evolve AGI safely",
+    "features": [
+      "Users design glyphs that spawn/modify agents",
+      "Interactions become structured Vault data",
+      "Canon Promotion Pipeline for community submissions",
+      "Sandboxed review before production"
+    ]
+  },
+
+  "next_steps": {
+    "awaiting": "Phase 9A Manifest from ChatGPT (Architect)",
+    "no_autonomous_edits": true,
+    "scaffolds_complete": true,
+    "build_status": "clean"
+  }
+}

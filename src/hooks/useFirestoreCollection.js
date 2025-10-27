@@ -14,7 +14,7 @@ import {
   writeBatch,
   increment
 } from "firebase/firestore";
-import { db } from "../firebase.js";
+import { db } from "../lib/firebase.js";
 import { incPending, decPending } from "../lib/syncFlag.js";
 
 export function useFirestoreCollection({

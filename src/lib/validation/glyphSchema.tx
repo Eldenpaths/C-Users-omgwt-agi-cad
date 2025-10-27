@@ -1,0 +1,11 @@
+import { z } from "zod";
+
+export const glyphSchema = z.object({
+  symbol: z.string().max(8),
+  meaning: z.string().max(512),
+  meta: z.record(z.string(), z.any()).optional(),
+});
+
+export function validateGlyph(data: unknown) {
+  return glyphSchema.safeParse(data);
+}

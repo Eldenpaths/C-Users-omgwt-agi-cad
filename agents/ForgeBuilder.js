@@ -1,6 +1,6 @@
 // agents/ForgeBuilder.js
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../lib/firebase.js";
+import { db } from "../src/lib/firebase.js";
 import { QueueService } from "../src/features/mission/QueueService.js";
 
 export class ForgeBuilder {

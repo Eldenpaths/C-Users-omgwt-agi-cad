@@ -1,0 +1,9 @@
+export class StateFlowManager {
+  static MAX_RECURSION_DEPTH = 5;
+
+  static validateDepth(depth: number) {
+    if (depth > StateFlowManager.MAX_RECURSION_DEPTH) {
+      throw new Error(`Recursion depth ${depth} exceeds safe limit`);
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { Menu, LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { auth } from "../lib/firebase";
 
 export default function Topbar({ toggleSidebar }) {
   const handleSignOut = async () => {
