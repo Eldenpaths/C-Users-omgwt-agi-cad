@@ -1,167 +1,149 @@
-// ai/agi_dev_agent.ts
-// Autonomous development agent for AGI-CAD (Local Mode - No Firebase)
+// ai/agi_dev_agent.ts  –  Phase 8A Self-Build Bundle
+// Local autonomous agent that writes starter code & docs safely.
 
-import { Anthropic } from '@anthropic-ai/sdk';
-import { Octokit } from '@octokit/rest';
-import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import path from 'path';
+import { Anthropic } from "@anthropic-ai/sdk";
+import { Octokit } from "@octokit/rest";
+import { execSync } from "child_process";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import path from "path";
 
 interface Task {
   id: string;
   description: string;
   spec?: string;
-  status?: 'pending' | 'in_progress' | 'review' | 'complete';
   files: string[];
-  dependencies?: string[];
-  branch?: string;
-  pr?: string;
 }
 
 interface AgentState {
   sessionId: string;
   phase: string;
-  currentTask?: Task;
-  completedTasks: string[];
-  heartbeat: {
-    lastPing: number;
-    status: 'active' | 'idle' | 'error';
-    currentFile?: string;
-  };
+  completed: number;
+  heartbeat: { status: "idle" | "in_progress" | "error"; lastPing: number };
 }
 
-/**
- * Local-only autonomous agent
- * Disables Firebase telemetry, safe for offline use
- */
 export class AGIDevAgent {
   private anthropic: Anthropic;
   private github: Octokit;
-  private state: AgentState;
   private repoPath: string;
+  private state: AgentState;
 
   constructor(
-    anthropicKey: string = 'none',
-    githubToken: string = 'none',
+    anthropicKey: string = "none",
+    githubToken: string = "none",
     repoPath: string = process.cwd()
   ) {
     this.anthropic = new Anthropic({ apiKey: anthropicKey });
     this.github = new Octokit({ auth: githubToken });
     this.repoPath = repoPath;
-
     this.state = {
-      sessionId: `dev-session-${Date.now()}`,
-      phase: 'phase-8',
-      completedTasks: [],
-      heartbeat: {
-        lastPing: Date.now(),
-        status: 'idle',
-      },
+      sessionId: `phase8A-${Date.now()}`,
+      phase: "phase-8A",
+      completed: 0,
+      heartbeat: { status: "idle", lastPing: Date.now() },
     };
-
-    console.log(`🔧 Initialized AGI Dev Agent in local mode`);
+    console.log(`⚙️ AGI-CAD Phase 8A Agent ready (offline mode)`);
     this.startHeartbeat();
   }
 
-  async startSprint(sprintConfig: {
-    goal: string;
-    tasks: Task[];
-    checkpoints?: any[];
-  }) {
-    console.log(`🚀 Starting sprint: ${sprintConfig.goal}`);
-    console.log(`📋 Total tasks: ${sprintConfig.tasks.length}`);
-
-    for (const task of sprintConfig.tasks) {
-      await this.executeTask(task);
-    }
-
-    console.log('✅ Sprint complete!');
+  /** ─────────────────────────────── Sprint loop ─────────────────────────────── */
+  async startSprint(config: { goal: string; tasks: Task[] }) {
+    console.log(`🚀 Sprint goal: ${config.goal}`);
+    for (const task of config.tasks) await this.executeTask(task);
+    console.log("✅ Sprint complete");
   }
 
+  /** ─────────────────────────────── Execute single task ─────────────────────── */
   async executeTask(task: Task) {
-    console.log(`\n📝 Task: ${task.description}`);
-    this.state.currentTask = task;
-    this.updateHeartbeat('in_progress', task.files[0]);
+    console.log(`\n🧩 ${task.description}`);
+    this.state.heartbeat.status = "in_progress";
 
-    try {
-      const context = await this.gatherContext(task);
-      console.log('📄 Context loaded');
+    // Ensure output folder
+    const autoDir = path.join(this.repoPath, "auto_commits");
+    if (!existsSync(autoDir)) mkdirSync(autoDir);
 
-      const branch = `ai/task-${task.id}`;
-      this.gitCheckout(branch);
-      console.log(`🌿 Created branch ${branch}`);
+    for (const file of task.files) {
+      const fullPath = path.join(autoDir, file);
+      const dir = path.dirname(fullPath);
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
-      for (const file of task.files) {
-        const filePath = path.join(this.repoPath, file);
-        const dir = path.dirname(filePath);
-        if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-
-        if (!existsSync(filePath)) {
-          writeFileSync(filePath, `# Placeholder for ${file}\n`);
-          console.log(`  ✨ Created ${file}`);
-        } else {
-          console.log(`  ⚙️ Found existing file: ${file}`);
-        }
-      }
-
-      this.gitCommit(`Auto scaffold: ${task.description}`);
-      this.state.completedTasks.push(task.id);
-      this.updateHeartbeat('idle');
-    } catch (err) {
-      console.error(`❌ Task failed: ${err}`);
-      this.updateHeartbeat('error');
+      const template = this.writeTemplate(file, task.description);
+      writeFileSync(fullPath, template);
+      console.log(`  ✨ wrote ${file}`);
     }
+
+    // Optional doc generation
+    this.generateDocs(task);
+
+    this.gitSafeCommit(task.description);
+    this.state.completed++;
+    this.state.heartbeat.status = "idle";
   }
 
-  async gatherContext(task: Task): Promise<string> {
-    const parts: string[] = [];
-    if (task.spec && existsSync(task.spec)) {
-      parts.push(`Spec: ${readFileSync(task.spec, 'utf-8')}`);
-    }
-    return parts.join('\n');
+  /** ─────────────────────────────── Template Writer ─────────────────────────── */
+  writeTemplate(file: string, description: string): string {
+    const ext = path.extname(file);
+    const base = path.basename(file);
+
+    const headers = `/**\n * Auto-generated by AGI-CAD Phase 8A\n * File: ${base}\n * Purpose: ${description}\n */\n\n`;
+
+    if (ext === ".ts" || ext === ".tsx")
+      return (
+        headers +
+        `export function ${base.replace(/\W/g, "_")}_Template(){\n  console.log("Stub for ${description}");\n  return null;\n}\n`
+      );
+    if (ext === ".py")
+      return (
+        headers +
+        `def main():\n    print("Placeholder for ${description}")\n\nif __name__ == "__main__":\n    main()\n`
+      );
+    if (ext === ".json")
+      return headers + JSON.stringify({ description, phase: "8A" }, null, 2);
+    return headers + `# Placeholder for ${description}\n`;
   }
 
-  gitCheckout(branch: string) {
+  /** ─────────────────────────────── Docs Generator ──────────────────────────── */
+  generateDocs(task: Task) {
+    const docsDir = path.join(this.repoPath, "docs", "auto");
+    if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
+    const docPath = path.join(docsDir, `${task.id}.md`);
+    const content = `# ${task.description}\n\n**Files:**\n${task.files
+      .map((f) => `- ${f}`)
+      .join("\n")}\n\nGenerated ${new Date().toISOString()} by Phase 8A.`;
+    writeFileSync(docPath, content);
+  }
+
+  /** ─────────────────────────────── Git Ops (Safe) ──────────────────────────── */
+  gitSafeCommit(msg: string) {
     try {
-      execSync(`git checkout -b ${branch}`, { cwd: this.repoPath });
+      execSync("git add .", { cwd: this.repoPath });
+      execSync(`git commit -m "auto: ${msg}"`, { cwd: this.repoPath });
+      console.log(`  💾 committed: ${msg}`);
     } catch {
-      console.log(`⚠️ Branch ${branch} may already exist`);
+      console.log("  ⚠️ no git commit made (detached or unchanged)");
     }
   }
 
-  gitCommit(message: string) {
-    try {
-      execSync('git add .', { cwd: this.repoPath });
-      execSync(`git commit -m "${message}"`, { cwd: this.repoPath });
-      console.log(`💾 Committed: ${message}`);
-    } catch {
-      console.log(`⚠️ Skipped commit (no changes or git not set up)`);
-    }
-  }
-
+  /** ─────────────────────────────── Heartbeat ───────────────────────────────── */
   startHeartbeat() {
     setInterval(() => {
       this.state.heartbeat.lastPing = Date.now();
       console.log(
-        `💓 Heartbeat: ${this.state.heartbeat.status} | Tasks complete: ${this.state.completedTasks.length}`
+        `💓  heartbeat: ${this.state.heartbeat.status} | done ${this.state.completed}`
       );
     }, 5000);
   }
-
-  updateHeartbeat(status: AgentState['heartbeat']['status'], file?: string) {
-    this.state.heartbeat.status = status;
-    this.state.heartbeat.currentFile = file;
-  }
 }
 
-// CLI entrypoint
+/* ─────────────────────────────── CLI Runner ─────────────────────────────── */
 if (require.main === module) {
   try {
-    const configPath = path.join(process.cwd(), '.agi-cad', 'sprint-config.json');
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+    const cfg = JSON.parse(
+      readFileSync(path.join(process.cwd(), ".agi-cad", "sprint-config.json"), "utf-8")
+    );
     const agent = new AGIDevAgent();
-    agent.startSprint(config);
+    agent.startSprint(cfg);
   } catch (err) {
-    console.error('Error:', err);
+    console.error("❌ Failed to start sprint:", err);
   }
 }
+
