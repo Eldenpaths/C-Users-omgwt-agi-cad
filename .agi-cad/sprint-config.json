@@ -1,0 +1,22 @@
+{
+  "sprintId": "phase-8-compression",
+  "goal": "Complete Phase 8 compression pipeline",
+  "duration": "6_weeks",
+  "startDate": "2025-11-01",
+  "tasks": [
+    { "id": "mesh-preprocess", "description": "Implement mesh preprocessing and voxelization", "files": ["backend/src/preprocessor.py","backend/tests/test_preprocessor.py"], "dependencies": [] },
+    { "id": "crystalline-encoder", "description": "Build crystalline lattice encoder", "files": ["backend/src/codecs/crystalline.py","backend/tests/test_crystalline.py"], "dependencies": ["mesh-preprocess"] },
+    { "id": "ifs-encoder", "description": "Implement IFS fallback encoder", "files": ["backend/src/codecs/ifs.py","backend/tests/test_ifs.py"], "dependencies": ["mesh-preprocess"] },
+    { "id": "compression-pipeline", "description": "Integrate compression pipeline", "files": ["backend/src/compressor.py","backend/tests/test_compression.py"], "dependencies": ["crystalline-encoder","ifs-encoder"] },
+    { "id": "cloud-function", "description": "Deploy compression Cloud Function", "files": ["functions/src/compress.ts","functions/tests/compress.test.ts"], "dependencies": ["compression-pipeline"] },
+    { "id": "frontend-upload", "description": "Build file upload UI", "files": ["frontend/src/app/upload/page.tsx","frontend/src/components/UploadZone.tsx","frontend/src/hooks/useUpload.ts"], "dependencies": ["cloud-function"] },
+    { "id": "status-tracking", "description": "Implement compression job tracking", "files": ["frontend/src/hooks/useCompressionJob.ts","frontend/src/components/JobStatus.tsx"], "dependencies": ["frontend-upload"] },
+    { "id": "e2e-test", "description": "End-to-end compression test", "files": ["tests/e2e/compression-pipeline.spec.ts"], "dependencies": ["status-tracking"] }
+  ],
+  "successCriteria": {
+    "compressionRatio": 50,
+    "processingTime": 30000,
+    "successRate": 0.8,
+    "testCoverage": 0.7
+  }
+}

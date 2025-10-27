@@ -1,0 +1,146 @@
+{
+  "sprintId": "phase-8-compression",
+  "goal": "Complete Phase 8 compression pipeline",
+  "duration": "6_weeks",
+  "startDate": "2025-11-01",
+  
+  "tasks": [
+    {
+      "id": "mesh-preprocess",
+      "description": "Implement mesh preprocessing and voxelization",
+      "spec": "docs/phase8_plan.md#week-2",
+      "files": [
+        "backend/src/preprocessor.py",
+        "backend/tests/test_preprocessor.py"
+      ],
+      "dependencies": [],
+      "estimatedTime": "2 days"
+    },
+    {
+      "id": "crystalline-encoder",
+      "description": "Build crystalline lattice encoder",
+      "spec": "docs/phase8_plan.md#week-3-4",
+      "files": [
+        "backend/src/codecs/crystalline.py",
+        "backend/tests/test_crystalline.py"
+      ],
+      "dependencies": ["mesh-preprocess"],
+      "estimatedTime": "4 days"
+    },
+    {
+      "id": "ifs-encoder",
+      "description": "Implement IFS fallback encoder",
+      "spec": "docs/phase8_plan.md#week-5",
+      "files": [
+        "backend/src/codecs/ifs.py",
+        "backend/tests/test_ifs.py"
+      ],
+      "dependencies": ["mesh-preprocess"],
+      "estimatedTime": "2 days"
+    },
+    {
+      "id": "compression-pipeline",
+      "description": "Integrate compression pipeline",
+      "spec": "docs/phase8_plan.md#week-6",
+      "files": [
+        "backend/src/compressor.py",
+        "backend/tests/test_compression.py"
+      ],
+      "dependencies": ["crystalline-encoder", "ifs-encoder"],
+      "estimatedTime": "3 days"
+    },
+    {
+      "id": "cloud-function",
+      "description": "Deploy compression Cloud Function",
+      "spec": "docs/phase8_plan.md#cloud-integration",
+      "files": [
+        "functions/src/compress.ts",
+        "functions/tests/compress.test.ts"
+      ],
+      "dependencies": ["compression-pipeline"],
+      "estimatedTime": "2 days"
+    },
+    {
+      "id": "frontend-upload",
+      "description": "Build file upload UI",
+      "spec": "docs/phase8_plan.md#frontend",
+      "files": [
+        "frontend/src/app/upload/page.tsx",
+        "frontend/src/components/UploadZone.tsx",
+        "frontend/src/hooks/useUpload.ts"
+      ],
+      "dependencies": ["cloud-function"],
+      "estimatedTime": "2 days"
+    },
+    {
+      "id": "status-tracking",
+      "description": "Implement compression job tracking",
+      "spec": "docs/phase8_plan.md#firestore-schema",
+      "files": [
+        "frontend/src/hooks/useCompressionJob.ts",
+        "frontend/src/components/JobStatus.tsx"
+      ],
+      "dependencies": ["frontend-upload"],
+      "estimatedTime": "1 day"
+    },
+    {
+      "id": "e2e-test",
+      "description": "End-to-end compression test",
+      "spec": "docs/phase8_plan.md#success-criteria",
+      "files": [
+        "tests/e2e/compression-pipeline.spec.ts"
+      ],
+      "dependencies": ["status-tracking"],
+      "estimatedTime": "1 day"
+    }
+  ],
+  
+  "checkpoints": [
+    {
+      "day": 7,
+      "tasksExpected": ["mesh-preprocess"],
+      "deliverable": "Voxelization working on 10 test models",
+      "reviewRequired": true
+    },
+    {
+      "day": 14,
+      "tasksExpected": ["crystalline-encoder", "ifs-encoder"],
+      "deliverable": "Both encoders tested with >50× compression",
+      "reviewRequired": true
+    },
+    {
+      "day": 28,
+      "tasksExpected": ["compression-pipeline", "cloud-function"],
+      "deliverable": "Cloud Function deployed, API working",
+      "reviewRequired": true
+    },
+    {
+      "day": 42,
+      "tasksExpected": ["frontend-upload", "status-tracking", "e2e-test"],
+      "deliverable": "Full upload→compress→download workflow",
+      "reviewRequired": true
+    }
+  ],
+  
+  "successCriteria": {
+    "compressionRatio": 50,
+    "processingTime": 30000,
+    "successRate": 0.8,
+    "testCoverage": 0.7
+  },
+  
+  "notifications": {
+    "checkpointReached": {
+      "discord": "https://discord.com/api/webhooks/...",
+      "slack": "https://hooks.slack.com/...",
+      "email": "your-email@example.com"
+    },
+    "taskComplete": {
+      "discord": true
+    },
+    "errorOccurred": {
+      "discord": true,
+      "email": true
+    }
+  }
+}

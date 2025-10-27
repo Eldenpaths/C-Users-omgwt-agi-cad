@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ✅ VaultMeta Secure Access (Phase 7B)
+    match /vaultMeta/{phase} {
+      // Authenticated users can read status
+      allow read: if request.auth != null;
+
+      // Only Sentinel service or admin can write
+      allow update, create, delete: if request.auth.token.role == "sentinel";
+    }
+
+    // ✅ Public-safe fallback (for other collections)
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // everything else locked
+    }
+  }
+}
