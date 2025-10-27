@@ -1,23 +1,16 @@
-// CLAUDE-META: Phase 9C Hybrid Patch - Agent Control API
+// CLAUDE-META: Phase 9D Hybrid Patch - Agent Control API (Firebase Auth)
 // Architect: ChatGPT (GPT-5) Canonical Authority
-// Purpose: Pause/resume/terminate agent operations
+// Purpose: Agent control with Firebase ID token authentication
 // Status: Production - Hybrid Safe Mode Active
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { initAdmin } from "@/lib/firebaseAdmin";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { verifyHMAC } from "@/lib/security/hmac";
+import { verifyFirebaseToken, verifyOwnership } from "@/lib/security/auth";
 
 const ControlSchema = z.object({
   action: z.enum(["pause", "resume", "terminate"]),
-});
-
-const SignedControlRequest = z.object({
-  data: ControlSchema,
-  uid: z.string(),
-  timestamp: z.number(),
-  hmac: z.string(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -28,21 +21,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   initAdmin();
   const db = getFirestore();
 
+  // Verify Firebase ID token
+  const authResult = await verifyFirebaseToken(req);
+  if (!authResult.valid) {
+    return res.status(401).json({ error: authResult.error || "Unauthorized" });
+  }
+
+  const user = authResult.user!;
+
   try {
     const { id } = req.query;
     if (!id || typeof id !== "string") {
       return res.status(400).json({ error: "Agent ID required" });
     }
 
-    const signedPayload = SignedControlRequest.parse(req.body);
-
-    // Verify HMAC
-    const verification = verifyHMAC(signedPayload);
-    if (!verification.valid) {
-      return res.status(401).json({ error: verification.error || "Unauthorized" });
-    }
-
-    const { action } = verification.data!;
+    const controlData = ControlSchema.parse(req.body);
+    const { action } = controlData;
 
     // Get agent
     const agentRef = db.collection("nexusAgents").doc(id);
@@ -55,22 +49,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const agentData = agentDoc.data();
 
     // Verify ownership
-    if (agentData?.uid !== signedPayload.uid) {
-      return res.status(403).json({ error: "Forbidden" });
+    const ownershipCheck = verifyOwnership(user.uid, agentData?.uid);
+    if (!ownershipCheck.valid) {
+      return res.status(403).json({ error: ownershipCheck.error });
     }
 
     // Apply action
     let newStatus: string;
     switch (action) {
       case "pause":
-        if (agentData.status === "terminated") {
+        if (agentData?.status === "terminated") {
           return res.status(400).json({ error: "Cannot pause terminated agent" });
         }
         newStatus = "paused";
         break;
 
       case "resume":
-        if (agentData.status === "terminated") {
+        if (agentData?.status === "terminated") {
           return res.status(400).json({ error: "Cannot resume terminated agent" });
         }
         newStatus = "active";
@@ -82,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const childrenSnapshot = await db
           .collection("nexusAgents")
           .where("parentId", "==", id)
-          .where("uid", "==", signedPayload.uid)
+          .where("uid", "==", user.uid)
           .get();
 
         const batch = db.batch();
@@ -104,10 +99,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Log control action
     await db.collection("nexusControlLog").add({
-      uid: signedPayload.uid,
+      uid: user.uid,
       agentId: id,
       action,
-      previousStatus: agentData.status,
+      previousStatus: agentData?.status,
       newStatus,
       createdAt: Timestamp.now(),
     });

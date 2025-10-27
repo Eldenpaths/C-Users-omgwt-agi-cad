@@ -1,13 +1,13 @@
-// CLAUDE-META: Phase 9C Hybrid Patch - Agent Operations API
+// CLAUDE-META: Phase 9D Hybrid Patch - Agent Operations API (Firebase Auth)
 // Architect: ChatGPT (GPT-5) Canonical Authority
-// Purpose: Live agent lifecycle management with Firestore persistence
+// Purpose: Live agent lifecycle with Firebase ID token authentication
 // Status: Production - Hybrid Safe Mode Active
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { initAdmin } from "@/lib/firebaseAdmin";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { verifyHMAC } from "@/lib/security/hmac";
+import { verifyFirebaseToken, verifyOwnership } from "@/lib/security/auth";
 
 const SpawnSchema = z.object({
   parentId: z.string(),
@@ -16,28 +16,24 @@ const SpawnSchema = z.object({
   lineageRoot: z.string(),
 });
 
-const SignedSpawnRequest = z.object({
-  data: SpawnSchema,
-  uid: z.string(),
-  timestamp: z.number(),
-  hmac: z.string(),
-});
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   initAdmin();
   const db = getFirestore();
 
-  // GET: List all agents for user
+  // Verify Firebase ID token
+  const authResult = await verifyFirebaseToken(req);
+  if (!authResult.valid) {
+    return res.status(401).json({ error: authResult.error || "Unauthorized" });
+  }
+
+  const user = authResult.user!;
+
+  // GET: List all agents for authenticated user
   if (req.method === "GET") {
     try {
-      const { uid } = req.query;
-      if (!uid || typeof uid !== "string") {
-        return res.status(400).json({ error: "UID required" });
-      }
-
       const snapshot = await db
         .collection("nexusAgents")
-        .where("uid", "==", uid)
+        .where("uid", "==", user.uid)
         .orderBy("createdAt", "desc")
         .limit(100)
         .get();
@@ -56,19 +52,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // POST: Spawn new agent
   if (req.method === "POST") {
     try {
-      const signedPayload = SignedSpawnRequest.parse(req.body);
-
-      // Verify HMAC
-      const verification = verifyHMAC(signedPayload);
-      if (!verification.valid) {
-        return res.status(401).json({ error: verification.error || "Unauthorized" });
-      }
-
-      const { parentId, name, depth, lineageRoot } = verification.data!;
+      const spawnData = SpawnSchema.parse(req.body);
+      const { parentId, name, depth, lineageRoot } = spawnData;
 
       // Validate depth limit
       if (depth > 5) {
-        return res.status(400).json({ error: "Recursion depth limit exceeded" });
+        return res.status(400).json({ error: "Recursion depth limit exceeded (max 5)" });
       }
 
       // Check parent exists (if not root)
@@ -78,11 +67,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(404).json({ error: `Parent agent ${parentId} not found` });
         }
 
+        // Verify parent ownership
+        const parentData = parentDoc.data();
+        const ownershipCheck = verifyOwnership(user.uid, parentData?.uid);
+        if (!ownershipCheck.valid) {
+          return res.status(403).json({ error: ownershipCheck.error });
+        }
+
         // Check parent's child count
         const childrenSnapshot = await db
           .collection("nexusAgents")
           .where("parentId", "==", parentId)
-          .where("uid", "==", signedPayload.uid)
+          .where("uid", "==", user.uid)
           .get();
 
         if (childrenSnapshot.size >= 3) {
@@ -93,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Create agent
       const agentRef = db.collection("nexusAgents").doc();
       const agentData = {
-        uid: signedPayload.uid,
+        uid: user.uid,
         name,
         parentId,
         depth,
@@ -102,6 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         drift: false,
         stdDev: 0,
         entropy: 0,
+        stateVector: [] as number[], // Phase 9D: Store state vectors
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       };
@@ -110,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Log lineage
       await db.collection("agentLineage").add({
-        uid: signedPayload.uid,
+        uid: user.uid,
         agentId: agentRef.id,
         parentId,
         lineageRoot,
