@@ -12,7 +12,9 @@
       "Bash(firebase use:*)",
       "Bash(firebase projects:list:*)",
       "Bash(pnpm test:phase10b:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(npx tsx:*)",
+      "Bash(timeout 30 npx tsx:*)"
     ],
     "deny": [],
     "ask": []

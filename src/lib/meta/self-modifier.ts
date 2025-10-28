@@ -3,8 +3,8 @@
 // Purpose: Safe code self-modification with Constitutional Guard
 // Status: Production - Hybrid Safe Mode Active
 
-import { DriftMonitor } from "@/agents/nexus/DriftMonitor";
-import { ConstitutionalGuard } from "@/lib/safety/constitutional-guard";
+import { DriftMonitor } from "../safety/drift-monitor";
+import { ConstitutionalGuard } from "../safety/constitutional-guard";
 
 export type CodeDiff = {
   filePath: string;
