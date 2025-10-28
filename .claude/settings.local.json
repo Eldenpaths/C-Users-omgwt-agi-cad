@@ -15,7 +15,8 @@
       "Bash(pnpm test:*)",
       "Bash(npx tsx:*)",
       "Bash(timeout 30 npx tsx:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
