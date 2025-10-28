@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dynamically Typed Constitution (DTC)",
+  "version": "1.0.0",
+  "description": "Ethical and safety rules for AGI-CAD agent behavior",
+  "type": "object",
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z]+-\\d{3}$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["safety", "ethics", "privacy", "security", "quality"]
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"]
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Regex pattern for code analysis"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "author": {
+            "type": "string",
+            "description": "UID of human who created/modified this rule"
+          }
+        },
+        "required": ["id", "version", "category", "rule", "severity"]
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "constitutionVersion": {
+          "type": "string"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modifiedBy": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": ["rules", "metadata"]
+}
