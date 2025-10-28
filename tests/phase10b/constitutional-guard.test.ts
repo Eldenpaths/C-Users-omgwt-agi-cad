@@ -3,7 +3,8 @@
 // Purpose: Validate all 8 rules against live agents
 // Status: Shadow Testing - HYBRID_SAFE Active
 
-import { ConstitutionalGuard, CodeDiff } from '../../src/lib/safety/constitutional-guard';
+import { ConstitutionalGuard } from '../../src/lib/safety/constitutional-guard';
+import { CodeDiff } from '../../src/lib/meta/self-modifier';
 
 describe('ConstitutionalGuard - Rule Audit', () => {
   let guard: ConstitutionalGuard;
@@ -16,9 +17,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('safety-001: should detect eval() usage', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/eval-test.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'eval("x = 2");',
-        justification: 'Testing eval detection',
+        oldContent: 'const x = 1;',
+        newContent: 'eval("x = 2");',
+        reason: 'Testing eval detection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-001');
@@ -30,9 +32,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('safety-001: should detect Function() constructor', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/function-constructor.ts',
-        oldCode: 'const fn = () => {};',
-        newCode: 'const fn = new Function("return 1");',
-        justification: 'Testing Function() detection',
+        oldContent: 'const fn = () => {};',
+        newContent: 'const fn = new Function("return 1");',
+        reason: 'Testing Function() detection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-002');
@@ -44,9 +47,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('safety-002: should detect recursion limit bypass', async () => {
       const diff: CodeDiff = {
         filePath: 'src/lib/meta/recursive-agent.ts',
-        oldCode: 'const MAX_DEPTH = 5;',
-        newCode: 'const MAX_DEPTH = 999;',
-        justification: 'Testing recursion limit protection',
+        oldContent: 'const MAX_DEPTH = 5;',
+        newContent: 'const MAX_DEPTH = 999;',
+        reason: 'Testing recursion limit protection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-003');
@@ -58,9 +62,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('safety-003: should detect shell command execution', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/shell-exec.ts',
-        oldCode: 'const result = "";',
-        newCode: 'const result = require("child_process").exec("rm -rf /");',
-        justification: 'Testing shell exec detection',
+        oldContent: 'const result = "";',
+        newContent: 'const result = require("child_process").exec("rm -rf /");',
+        reason: 'Testing shell exec detection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-004');
@@ -74,9 +79,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('security-001: should detect exposed credentials', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/credentials.ts',
-        oldCode: 'const key = process.env.API_KEY;',
-        newCode: 'const key = "sk_live_1234567890abcdef";',
-        justification: 'Testing credential exposure',
+        oldContent: 'const key = process.env.API_KEY;',
+        newContent: 'const key = "sk_live_1234567890abcdef";',
+        reason: 'Testing credential exposure',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-005');
@@ -88,9 +94,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('security-002: should detect disabled auth checks', async () => {
       const diff: CodeDiff = {
         filePath: 'firestore.rules',
-        oldCode: 'allow read: if request.auth != null;',
-        newCode: 'allow read: if true;',
-        justification: 'Testing auth bypass detection',
+        oldContent: 'allow read: if request.auth != null;',
+        newContent: 'allow read: if true;',
+        reason: 'Testing auth bypass detection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-006');
@@ -104,9 +111,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('privacy-001: should detect sensitive data logging', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/logging.ts',
-        oldCode: 'console.log("User action");',
-        newCode: 'console.log("User password:", user.password);',
-        justification: 'Testing privacy violation detection',
+        oldContent: 'console.log("User action");',
+        newContent: 'console.log("User password:", user.password);',
+        reason: 'Testing privacy violation detection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-007');
@@ -120,9 +128,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('quality-001: should require CLAUDE-META header', async () => {
       const diff: CodeDiff = {
         filePath: 'src/lib/new-module.ts',
-        oldCode: '',
-        newCode: 'export const newFeature = () => {};',
-        justification: 'Testing metadata requirement',
+        oldContent: '',
+        newContent: 'export const newFeature = () => {};',
+        reason: 'Testing metadata requirement',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-008');
@@ -137,9 +146,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('quality-002: should flag bare TODO comments', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/todo.ts',
-        oldCode: 'const x = 1;',
-        newCode: '// TODO: fix this\nconst x = 1;',
-        justification: 'Testing TODO detection',
+        oldContent: 'const x = 1;',
+        newContent: '// TODO: fix this\nconst x = 1;',
+        reason: 'Testing TODO detection',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-009');
@@ -174,9 +184,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('should block on CRITICAL violations', async () => {
       const criticalDiff: CodeDiff = {
         filePath: 'src/test/critical.ts',
-        oldCode: 'const safe = true;',
-        newCode: 'eval("unsafe");',
-        justification: 'Critical violation test',
+        oldContent: 'const safe = true;',
+        newContent: 'eval("unsafe");',
+        reason: 'Critical violation test',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(criticalDiff, 'test-agent-010');
@@ -188,9 +199,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('should warn on LOW violations without blocking', async () => {
       const lowDiff: CodeDiff = {
         filePath: 'src/test/low-severity.ts',
-        oldCode: 'const x = 1;',
-        newCode: '// TODO\nconst x = 1;',
-        justification: 'Low severity test',
+        oldContent: 'const x = 1;',
+        newContent: '// TODO\nconst x = 1;',
+        reason: 'Low severity test',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(lowDiff, 'test-agent-011');
@@ -207,9 +219,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('should generate consistent justification hash', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/hash.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'const x = 2;',
-        justification: 'Consistent hashing test',
+        oldContent: 'const x = 1;',
+        newContent: 'const x = 2;',
+        reason: 'Consistent hashing test',
+        riskScore: 0,
       };
 
       const result1 = await guard.evaluateModification(diff, 'test-agent-012');
@@ -224,9 +237,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('should provide detailed critique summary', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/audit.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'const x = 2;',
-        justification: 'Audit trail test',
+        oldContent: 'const x = 1;',
+        newContent: 'const x = 2;',
+        reason: 'Audit trail test',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-013');
@@ -241,9 +255,10 @@ describe('ConstitutionalGuard - Rule Audit', () => {
     test('should prepare data for selfModificationLog collection', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/firestore.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'const x = 2;',
-        justification: 'Firestore integration test',
+        oldContent: 'const x = 1;',
+        newContent: 'const x = 2;',
+        reason: 'Firestore integration test',
+        riskScore: 0,
       };
 
       const result = await guard.evaluateModification(diff, 'test-agent-014');
