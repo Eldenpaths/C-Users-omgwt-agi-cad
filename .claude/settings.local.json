@@ -14,7 +14,8 @@
       "Bash(pnpm test:phase10b:*)",
       "Bash(pnpm test:*)",
       "Bash(npx tsx:*)",
-      "Bash(timeout 30 npx tsx:*)"
+      "Bash(timeout 30 npx tsx:*)",
+      "Bash(npx jest:*)"
     ],
     "deny": [],
     "ask": []

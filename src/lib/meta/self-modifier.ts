@@ -5,6 +5,7 @@
 
 import { DriftMonitor } from "../safety/drift-monitor";
 import { ConstitutionalGuard } from "../safety/constitutional-guard";
+import type { SwarmCoordinator } from "./swarm-coordinator"; // Phase 10D: Drift-trust integration
 
 export type CodeDiff = {
   filePath: string;
@@ -21,6 +22,8 @@ export type ModificationResult = {
   driftScore: number;
   shadowTestResult?: ShadowTestResult;
   justificationHash: string;
+  modificationId?: string; // Unique ID for rollback tracking
+  rollbackRecommended?: boolean; // Phase 10D: Recursive rollback flag
 };
 
 export type ShadowTestResult = {
@@ -44,17 +47,30 @@ export class SelfModifier {
   private guard: ConstitutionalGuard;
   private driftMonitor: DriftMonitor;
   private readonly MAX_RISK_THRESHOLD = 0.3;
+  private swarmCoordinator?: SwarmCoordinator; // Phase 10D: Optional drift-trust integration
 
   // Track modification history
   private modificationHistory: Array<{
     timestamp: number;
     diff: CodeDiff;
     result: ModificationResult;
+    agentId: string;
+    modificationId: string;
   }> = [];
 
-  constructor(guard: ConstitutionalGuard) {
+  // Phase 10D: Rollback tracking
+  private rollbackQueue: Array<{
+    modificationId: string;
+    reason: string;
+    triggeredBy: string;
+  }> = [];
+
+  private modificationDependencies: Map<string, string[]> = new Map(); // modId -> [dependent modIds]
+
+  constructor(guard: ConstitutionalGuard, swarmCoordinator?: SwarmCoordinator) {
     this.guard = guard;
-    this.driftMonitor = new DriftMonitor(50, 2.0, 0.75);
+    this.driftMonitor = new DriftMonitor();
+    this.swarmCoordinator = swarmCoordinator; // Phase 10D: Drift-trust feedback loop
   }
 
   /**
@@ -63,6 +79,9 @@ export class SelfModifier {
    */
   async proposeModification(diff: CodeDiff, agentId: string): Promise<ModificationResult> {
     console.log(`[SelfModifier] Agent ${agentId} proposing modification to ${diff.filePath}`);
+
+    // 0. Generate unique modification ID for rollback tracking
+    const modificationId = this.generateModificationId(agentId, diff.filePath);
 
     // 1. Compute risk score from diff
     const computedRisk = this.computeRiskScore(diff);
@@ -78,6 +97,7 @@ export class SelfModifier {
         constitutionViolations: [`Risk score ${computedRisk} exceeds maximum ${this.MAX_RISK_THRESHOLD}`],
         driftScore: 0,
         justificationHash: this.computeJustificationHash(diff, []),
+        modificationId,
       };
     }
 
@@ -93,6 +113,7 @@ export class SelfModifier {
         constitutionViolations: guardResult.violations,
         driftScore: 0,
         justificationHash: this.computeJustificationHash(diff, guardResult.violations),
+        modificationId,
       };
     }
 
@@ -112,12 +133,34 @@ export class SelfModifier {
           driftScore: 0,
           shadowTestResult: shadowResult,
           justificationHash: this.computeJustificationHash(diff, shadowResult.errors),
+          modificationId,
         };
       }
     }
 
     // 5. Drift monitoring
     const driftScore = this.assessModificationDrift(diff);
+
+    // Phase 10D: Notify swarm coordinator of agent drift
+    if (this.swarmCoordinator && driftScore > 0) {
+      this.swarmCoordinator.recordAgentDrift(agentId, driftScore);
+    }
+
+    // 5a. Check drift threshold (DRIFT_THRESHOLD = 0.1)
+    const DRIFT_THRESHOLD = 0.1;
+    if (driftScore > DRIFT_THRESHOLD) {
+      console.warn(`[SelfModifier] Drift threshold exceeded: ${driftScore.toFixed(4)} > ${DRIFT_THRESHOLD}`);
+
+      return {
+        approved: false,
+        riskScore: computedRisk,
+        constitutionViolations: [`Drift score ${driftScore.toFixed(4)} exceeds threshold ${DRIFT_THRESHOLD}`],
+        driftScore,
+        justificationHash: this.computeJustificationHash(diff, ['Excessive drift detected']),
+        modificationId,
+        rollbackRecommended: true, // Phase 10D: Recommend rollback on excessive drift
+      };
+    }
 
     // 6. All checks passed
     const result: ModificationResult = {
@@ -127,14 +170,21 @@ export class SelfModifier {
       driftScore,
       shadowTestResult: shadowResult,
       justificationHash: this.computeJustificationHash(diff, []),
+      modificationId,
+      rollbackRecommended: false,
     };
 
-    // Log to history
+    // Log to history with agent tracking for rollback
     this.modificationHistory.push({
       timestamp: Date.now(),
       diff,
       result,
+      agentId,
+      modificationId,
     });
+
+    // Track dependencies for recursive rollback
+    this.trackModificationDependencies(modificationId, diff.filePath);
 
     console.log(`[SelfModifier] Modification approved with risk ${computedRisk}`);
 
@@ -245,23 +295,21 @@ export class SelfModifier {
   }
 
   /**
-   * Assess modification drift
+   * Assess modification drift using DriftMonitor
    * Higher drift = more divergence from established patterns
    */
   private assessModificationDrift(diff: CodeDiff): number {
-    // Simplified drift calculation
-    // In production, this would analyze:
-    // - Code style consistency
-    // - Architectural patterns
-    // - Naming conventions
-    // - Test coverage
+    const assessment = this.driftMonitor.assessModification(diff);
 
-    const oldLines = diff.oldContent.split("\n").length;
-    const newLines = diff.newContent.split("\n").length;
-    const lineDelta = Math.abs(newLines - oldLines);
+    // Log drift detection warnings
+    if (assessment.driftDetected) {
+      console.warn(`[SelfModifier] Drift detected: ${assessment.driftScore.toFixed(4)} (threshold: 0.1)`);
+    }
+    if (assessment.entropyExceeded) {
+      console.warn(`[SelfModifier] High entropy: ${assessment.entropyScore.toFixed(4)} (threshold: 0.5)`);
+    }
 
-    // Normalized drift score
-    return Math.min(1.0, lineDelta / 100);
+    return assessment.driftScore;
   }
 
   /**
@@ -315,5 +363,114 @@ export class SelfModifier {
       approvalRate: total > 0 ? approved / total : 0,
       avgRisk,
     };
+  }
+
+  /**
+   * Phase 10D: Generate unique modification ID
+   */
+  private generateModificationId(agentId: string, filePath: string): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 9);
+    return `mod-${agentId}-${timestamp}-${random}`;
+  }
+
+  /**
+   * Phase 10D: Track modification dependencies
+   * If a file has been modified multiple times, later modifications depend on earlier ones
+   */
+  private trackModificationDependencies(modificationId: string, filePath: string): void {
+    // Find previous modifications to the same file
+    const previousMods = this.modificationHistory
+      .filter(m => m.diff.filePath === filePath && m.modificationId !== modificationId)
+      .map(m => m.modificationId);
+
+    if (previousMods.length > 0) {
+      this.modificationDependencies.set(modificationId, previousMods);
+    }
+  }
+
+  /**
+   * Phase 10D: Rollback a modification and its dependents recursively
+   */
+  async rollbackModification(modificationId: string, reason: string): Promise<{
+    rolledBack: string[];
+    failed: string[];
+  }> {
+    console.log(`[SelfModifier] Starting recursive rollback for ${modificationId}: ${reason}`);
+
+    const rolledBack: string[] = [];
+    const failed: string[] = [];
+
+    // Find all dependent modifications recursively
+    const toRollback = this.findDependentModifications(modificationId);
+    toRollback.push(modificationId); // Include the original
+
+    // Rollback in reverse order (most recent first)
+    for (const modId of toRollback.reverse()) {
+      try {
+        const mod = this.modificationHistory.find(m => m.modificationId === modId);
+        if (!mod) {
+          console.warn(`[SelfModifier] Modification ${modId} not found in history`);
+          failed.push(modId);
+          continue;
+        }
+
+        // Queue for rollback
+        this.rollbackQueue.push({
+          modificationId: modId,
+          reason,
+          triggeredBy: modificationId,
+        });
+
+        console.log(`[SelfModifier] Queued rollback: ${modId} (${mod.diff.filePath})`);
+        rolledBack.push(modId);
+      } catch (error: any) {
+        console.error(`[SelfModifier] Rollback failed for ${modId}:`, error.message);
+        failed.push(modId);
+      }
+    }
+
+    return { rolledBack, failed };
+  }
+
+  /**
+   * Phase 10D: Find all modifications that depend on a given modification
+   */
+  private findDependentModifications(modificationId: string): string[] {
+    const dependents: string[] = [];
+
+    // Find direct dependents
+    for (const [depModId, dependencies] of this.modificationDependencies.entries()) {
+      if (dependencies.includes(modificationId)) {
+        dependents.push(depModId);
+
+        // Recursively find transitive dependents
+        const transitive = this.findDependentModifications(depModId);
+        dependents.push(...transitive);
+      }
+    }
+
+    return Array.from(new Set(dependents)); // Remove duplicates
+  }
+
+  /**
+   * Phase 10D: Get rollback queue
+   */
+  getRollbackQueue(): typeof this.rollbackQueue {
+    return [...this.rollbackQueue];
+  }
+
+  /**
+   * Phase 10D: Clear rollback queue after execution
+   */
+  clearRollbackQueue(): void {
+    this.rollbackQueue = [];
+  }
+
+  /**
+   * Phase 10D: Get modification by ID
+   */
+  getModificationById(modificationId: string) {
+    return this.modificationHistory.find(m => m.modificationId === modificationId);
   }
 }
