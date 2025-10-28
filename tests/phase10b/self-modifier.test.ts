@@ -19,9 +19,10 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should approve low-risk modification', async () => {
       const safeDiff: CodeDiff = {
         filePath: 'src/test/sample.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'const x = 2;',
-        justification: 'Update constant value for testing',
+        oldContent: 'const x = 1;',
+        newContent: 'const x = 2;',
+        reason: 'Update constant value for testing',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(safeDiff, 'test-agent-001');
@@ -34,24 +35,26 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should reject high-risk modification with eval()', async () => {
       const dangerousDiff: CodeDiff = {
         filePath: 'src/test/sample.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'eval("malicious code");',
-        justification: 'Testing dangerous pattern detection',
+        oldContent: 'const x = 1;',
+        newContent: 'eval("malicious code");',
+        reason: 'Testing dangerous pattern detection',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(dangerousDiff, 'test-agent-002');
 
       expect(result.approved).toBe(false);
       expect(result.riskScore).toBeGreaterThan(0.3);
-      expect(result.violations).toContain('safety-001');
+      expect(result.constitutionViolations).toContain('safety-001');
     });
 
     test('should reject modification to critical security file', async () => {
       const criticalDiff: CodeDiff = {
         filePath: 'src/lib/safety/constitutional-guard.ts',
-        oldCode: 'const MAX_RISK = 0.3;',
-        newCode: 'const MAX_RISK = 1.0;',
-        justification: 'Attempting to bypass safety threshold',
+        oldContent: 'const MAX_RISK = 0.3;',
+        newContent: 'const MAX_RISK = 1.0;',
+        reason: 'Attempting to bypass safety threshold',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(criticalDiff, 'test-agent-003');
@@ -63,9 +66,10 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should enforce shadow testing on medium-risk changes', async () => {
       const mediumDiff: CodeDiff = {
         filePath: 'src/components/TestComponent.tsx',
-        oldCode: 'return <div>Old</div>;',
-        newCode: 'return <div>New</div>;',
-        justification: 'Update component rendering',
+        oldContent: 'return <div>Old</div>;',
+        newContent: 'return <div>New</div>;',
+        reason: 'Update component rendering',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(mediumDiff, 'test-agent-004');
@@ -81,9 +85,10 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should rollback on drift_score > 0.1', async () => {
       const driftDiff: CodeDiff = {
         filePath: 'src/test/drift-test.ts',
-        oldCode: 'const baseline = "stable";',
-        newCode: 'const baseline = "unstable-deviation";',
-        justification: 'Testing drift detection',
+        oldContent: 'const baseline = "stable";',
+        newContent: 'const baseline = "unstable-deviation";',
+        reason: 'Testing drift detection',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(driftDiff, 'test-agent-005');
@@ -97,16 +102,17 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should maintain audit trail for rolled-back changes', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/audit.ts',
-        oldCode: 'const state = "before";',
-        newCode: 'const state = "after";',
-        justification: 'Audit trail test',
+        oldContent: 'const state = "before";',
+        newContent: 'const state = "after";',
+        reason: 'Audit trail test',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(diff, 'test-agent-006');
       const stats = modifier.getStats();
 
-      expect(stats.totalProposals).toBeGreaterThan(0);
-      expect(stats.totalRejections + stats.totalApprovals).toBe(stats.totalProposals);
+      expect(stats.total).toBeGreaterThan(0);
+      expect(stats.rejected + stats.approved).toBe(stats.total);
     });
   });
 
@@ -114,9 +120,10 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should calculate risk based on change size', async () => {
       const largeDiff: CodeDiff = {
         filePath: 'src/test/large-change.ts',
-        oldCode: 'const a = 1;',
-        newCode: 'const a = 1;\n'.repeat(100), // Large change
-        justification: 'Testing change size risk',
+        oldContent: 'const a = 1;',
+        newContent: 'const a = 1;\n'.repeat(100), // Large change
+        reason: 'Testing change size risk',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(largeDiff, 'test-agent-007');
@@ -136,9 +143,9 @@ describe('SelfModifier - Fusion Tests', () => {
       for (const pattern of patterns) {
         const diff: CodeDiff = {
           filePath: 'src/test/pattern-test.ts',
-          oldCode: 'const safe = true;',
-          newCode: `${pattern}"test")`,
-          justification: `Testing pattern: ${pattern}`,
+          oldContent: 'const safe = true;',
+          newContent: `${pattern}"test")`,
+          reason: `Testing pattern: ${pattern}`,
         };
 
         const result = await modifier.proposeModification(diff, `test-agent-${pattern}`);
@@ -151,16 +158,17 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should validate against all active rules', async () => {
       const diff: CodeDiff = {
         filePath: 'src/test/constitutional.ts',
-        oldCode: 'const test = "before";',
-        newCode: 'const test = "after";',
-        justification: 'Testing constitutional validation',
+        oldContent: 'const test = "before";',
+        newContent: 'const test = "after";',
+        reason: 'Testing constitutional validation',
+        riskScore: 0,
       };
 
       const result = await modifier.proposeModification(diff, 'test-agent-008');
 
       expect(result.constitutionalCritique).toBeDefined();
       if (!result.approved) {
-        expect(result.violations.length).toBeGreaterThan(0);
+        expect(result.constitutionViolations.length).toBeGreaterThan(0);
       }
     });
   });
@@ -169,13 +177,13 @@ describe('SelfModifier - Fusion Tests', () => {
     test('should track approval rate', async () => {
       const stats = modifier.getStats();
 
-      expect(stats).toHaveProperty('totalProposals');
-      expect(stats).toHaveProperty('totalApprovals');
-      expect(stats).toHaveProperty('totalRejections');
-      expect(stats).toHaveProperty('averageRiskScore');
+      expect(stats).toHaveProperty('total');
+      expect(stats).toHaveProperty('approved');
+      expect(stats).toHaveProperty('rejected');
+      expect(stats).toHaveProperty('avgRisk');
 
-      if (stats.totalProposals > 0) {
-        const approvalRate = stats.totalApprovals / stats.totalProposals;
+      if (stats.total > 0) {
+        const approvalRate = stats.approved / stats.total;
         expect(approvalRate).toBeGreaterThanOrEqual(0);
         expect(approvalRate).toBeLessThanOrEqual(1);
       }

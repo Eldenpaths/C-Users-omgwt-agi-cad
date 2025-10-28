@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:phase10b": "jest tests/phase10b",
+    "test:drift": "jest experiments/adversarial-drift"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
@@ -28,13 +33,18 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.9.1",
     "@types/react": "19.2.2",
     "autoprefixer": "10.4.19",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.33",
+    "jest": "^30.2.0",
     "postcss": "8.4.38",
     "tailwindcss": "3.4.4",
+    "ts-jest": "^29.4.5",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }

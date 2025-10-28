@@ -10,7 +10,9 @@
       "Bash(git commit:*)",
       "Bash(git tag:*)",
       "Bash(firebase use:*)",
-      "Bash(firebase projects:list:*)"
+      "Bash(firebase projects:list:*)",
+      "Bash(pnpm test:phase10b:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": [],
     "ask": []
