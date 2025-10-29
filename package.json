@@ -14,7 +14,9 @@
     "test:drift": "jest experiments/adversarial-drift",
     "test:telemetry": "npx tsx scripts/test-telemetry.js test",
     "test:telemetry:stream": "npx tsx scripts/test-telemetry.js stream",
-    "test:telemetry:all": "npx tsx scripts/test-telemetry.js all"
+    "test:telemetry:all": "npx tsx scripts/test-telemetry.js all",
+    "test:ai-nexus": "npx tsx scripts/test-ai-nexus.js test",
+    "test:ai-nexus:providers": "npx tsx scripts/test-ai-nexus.js providers"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
