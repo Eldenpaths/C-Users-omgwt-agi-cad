@@ -41,8 +41,8 @@ export interface TaskAnalyzerConfig {
  * Default configuration for task analysis
  */
 const DEFAULT_CONFIG: TaskAnalyzerConfig = {
-  freeThreshold: 0.3, // Tasks scoring < 0.3 use free AIs
-  hybridThreshold: 0.7, // Tasks scoring < 0.7 try hybrid
+  freeThreshold: 0.4, // Tasks scoring < 0.4 use free AIs (calibrated)
+  hybridThreshold: 0.65, // Tasks scoring < 0.65 try hybrid (calibrated)
   entropyWeight: 0.25,
   tokenWeight: 0.25,
   keywordWeight: 0.25,
@@ -75,7 +75,7 @@ const COMPLEXITY_KEYWORDS = {
  * Domain-specific keywords requiring specialized knowledge
  */
 const DOMAIN_KEYWORDS = {
-  cad: ['cad', 'drawing', '3d', 'modeling', 'geometry', 'mesh', 'render'],
+  cad: ['cad', 'drawing', '3d', 'modeling', 'geometry', 'mesh', 'render', 'three.js', 'threejs', 'webgl', 'vertex', 'polygon', 'frustum', 'culling', 'lod', 'level-of-detail', 'instancing'],
   ai: ['neural', 'machine learning', 'model', 'training', 'inference', 'embedding'],
   engineering: ['structural', 'mechanical', 'electrical', 'civil', 'aerospace'],
   math: ['equation', 'calculus', 'linear algebra', 'statistics', 'probability'],
