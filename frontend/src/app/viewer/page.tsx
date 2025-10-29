@@ -2,7 +2,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-const RenderPanel = dynamic(() => import('@/src/components/RenderPanel'), { ssr: false });
+const RenderPanel = dynamic(() => import('../../components/RenderPanel'), { ssr: false });
 
 export default function ViewerPage() {
   return (
