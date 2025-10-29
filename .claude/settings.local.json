@@ -16,7 +16,13 @@
       "Bash(npx tsx:*)",
       "Bash(timeout 30 npx tsx:*)",
       "Bash(npx jest:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(pnpm run dev)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(git checkout:*)",
+      "Bash(pnpm tsx:*)",
+      "Bash(pnpm test:ai-nexus:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,6 +4,7 @@
 // Status: Production - Phase 11 AI Nexus
 
 import { TaskAnalysis, getTaskAnalyzer } from './task-analyzer';
+import { executeWithProvider as executeWithRealProvider } from './providers';
 
 /**
  * AI Provider Configuration
@@ -385,7 +386,7 @@ export class AIRouter {
   }
 
   /**
-   * Execute task with specific provider (simulated for now)
+   * Execute task with specific provider (uses real API calls)
    */
   private async executeWithProvider(
     provider: AIProvider,
@@ -397,20 +398,20 @@ export class AIRouter {
     try {
       console.log(`[AIRouter] Executing with ${provider.name}...`);
 
-      // Simulate AI execution (replace with actual API calls)
-      const response = await this.simulateAIExecution(provider, task, context);
+      // Execute with real provider API
+      const result = await executeWithRealProvider(provider.id, task, context);
 
       const latencyMs = Date.now() - startTime;
-      const tokensUsed = Math.ceil((task.length + (context?.length || 0)) / 4);
-      const cost = (tokensUsed / 1000) * provider.costPerToken;
+      const cost = (result.tokensUsed / 1000) * provider.costPerToken;
 
       return {
-        success: true,
-        response,
+        success: result.success,
+        response: result.response,
         provider: provider.name,
-        tokensUsed,
+        tokensUsed: result.tokensUsed,
         cost,
         latencyMs,
+        error: result.error,
         fallbackUsed: false,
       };
     } catch (error) {
@@ -429,25 +430,6 @@ export class AIRouter {
     }
   }
 
-  /**
-   * Simulate AI execution (placeholder for actual API integration)
-   */
-  private async simulateAIExecution(
-    provider: AIProvider,
-    task: string,
-    context?: string
-  ): Promise<string> {
-    // Simulate network latency
-    const latency = Math.random() * 1000 + 500;
-    await new Promise(resolve => setTimeout(resolve, latency));
-
-    // Simulate occasional failures for free-tier AIs
-    if (provider.tier === 'free' && Math.random() < 0.2) {
-      throw new Error('Rate limit exceeded');
-    }
-
-    return `[Simulated ${provider.name} response]\n\nTask: ${task}\n\nThis is a placeholder response. Replace with actual API integration.`;
-  }
 
   /**
    * Get available providers by tier
