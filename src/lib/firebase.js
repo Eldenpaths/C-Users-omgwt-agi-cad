@@ -1,56 +1,47 @@
-// CLAUDE-META: Phase 10E Fusion Dashboard - Client-side Firebase
-// Architect: ChatGPT (GPT-5) Canonical Authority
-// Purpose: Client-side Firebase initialization with env vars
-// Status: Production - NEXT_PUBLIC env vars loaded from .env.local
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+let app = null;
+let auth = null;
+let db = null;
 
-// Firebase client configuration from environment variables
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+export function getFirebase() {
+  // ⛔ Skip during server-side rendering
+  if (typeof window === "undefined") return { app: null, auth: null, db: null };
 
-// Initialize Firebase (only once)
-let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-  console.log('✅ Firebase client initialized:', firebaseConfig.projectId);
-} else {
-  app = getApps()[0];
+  if (!app) {
+    app =
+      getApps()[0] ||
+      initializeApp({
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      });
+
+    auth = getAuth(app);
+    db = getFirestore(app);
+    console.log('✅ Firebase client initialized:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+  }
+  return { app, auth, db };
 }
 
-// Export Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Initialize immediately if on client side
+if (typeof window !== "undefined") {
+  getFirebase();
+}
 
-// Google Sign-In helper
+// Export individual values for direct imports
+export { app, auth, db };
+
+// Helper function for Google sign-in
 export async function signInWithGoogle() {
+  const { auth } = getFirebase();
+  if (!auth) throw new Error('Firebase not initialized');
   const provider = new GoogleAuthProvider();
-  try {
-    const result = await signInWithPopup(auth, provider);
-    console.log('✅ Signed in:', result.user.email);
-    return result.user;
-  } catch (error) {
-    console.error('❌ Sign-in error:', error);
-    throw error;
-  }
+  return signInWithPopup(auth, provider);
 }
 
-// Sign out helper
-export async function signOut() {
-  try {
-    await auth.signOut();
-    console.log('✅ Signed out');
-  } catch (error) {
-    console.error('❌ Sign-out error:', error);
-    throw error;
-  }
-}

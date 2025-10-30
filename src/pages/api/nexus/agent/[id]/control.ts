@@ -117,7 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (e: any) {
     if (e instanceof z.ZodError) {
-      return res.status(400).json({ error: "Invalid request", details: e.errors });
+      return res.status(400).json({ error: "Invalid request", details: e.issues });
     }
     return res.status(500).json({ error: e.message || "Failed to control agent" });
   }

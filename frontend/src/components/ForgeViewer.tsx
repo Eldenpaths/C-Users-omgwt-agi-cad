@@ -1,8 +1,8 @@
 // Phase 8C: Upload + visualize AGC data in WebGPU canvas
 "use client";
 import React, { useRef, useState } from "react";
-import { initWebGPU } from "@/src/lib/renderer/initWebGPU";
-import { parseAGC } from "@/src/lib/renderer/agcParser";
+import { initWebGPU } from "../lib/renderer/initWebGPU";
+import { parseAGC } from "../lib/renderer/agcParser";
 
 export default function ForgeViewer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

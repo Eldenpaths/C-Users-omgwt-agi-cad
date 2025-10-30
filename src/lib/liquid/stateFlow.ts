@@ -159,7 +159,7 @@ class LiquidStateManager {
 
     // Filter by timestamp
     if (options.since) {
-      states = states.filter(s => s.timestamp > options.since);
+      states = states.filter(s => s.timestamp > options.since!);
     }
 
     // Limit results

@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic";
-const ForgeViewer = dynamic(() => import("@/src/components/ForgeViewer"), { ssr: false });
+const ForgeViewer = dynamic(() => import("../../../frontend/src/components/ForgeViewer"), { ssr: false });
 
 export default function ForgePage() {
   return (

@@ -7,7 +7,7 @@
 
 import { useGlyphs } from "@/hooks/useGlyphs";
 import { useWebSocketNexus } from "@/hooks/useWebSocketNexus";
-import { useAuth } from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import GlyphConsole from "@/components/glyph/GlyphConsole";
 import AgentOverlay from "@/components/glyph/AgentOverlay";
@@ -18,7 +18,7 @@ import AgentInspector from "@/components/nexus/AgentInspector";
 import { AgentNode } from "@/components/nexus/NexusViz";
 
 export default function ForgeRuntimePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth() as { user: any; loading: boolean };
   const { overlays, commands } = useGlyphs();
 
   // WebSocket connection

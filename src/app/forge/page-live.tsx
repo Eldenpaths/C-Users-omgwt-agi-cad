@@ -8,7 +8,7 @@
 import { useGlyphs } from "@/hooks/useGlyphs";
 import { useNexusStateLive } from "@/hooks/useNexusStateLive";
 import { useDriftStream } from "@/hooks/useDriftStream";
-import { useAuth } from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import GlyphConsole from "@/components/glyph/GlyphConsole";
 import AgentOverlay from "@/components/glyph/AgentOverlay";
@@ -18,7 +18,7 @@ import DriftMonitorPanel from "@/components/nexus/DriftMonitorPanel";
 import AgentInspector from "@/components/nexus/AgentInspector";
 
 export default function ForgeLivePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth() as { user: any; loading: boolean };
   const { overlays, commands } = useGlyphs();
   const {
     agents,

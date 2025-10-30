@@ -25,7 +25,10 @@
       "Bash(pnpm test:ai-nexus:*)",
       "Bash(vercel:*)",
       "Bash(npx vercel --prod --yes)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(find:*)",
+      "Bash(git pull:*)",
+      "Bash(pnpm dev)"
     ],
     "deny": [],
     "ask": []

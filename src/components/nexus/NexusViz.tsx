@@ -86,6 +86,7 @@ function LineageLine({ from, to, drift }: LineageLineProps) {
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
   return (
+    // @ts-expect-error - R3F primitive element
     <line geometry={geometry}>
       <lineBasicMaterial
         color={drift ? "#ef4444" : "#fbbf24"}

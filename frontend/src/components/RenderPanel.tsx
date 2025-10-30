@@ -3,7 +3,7 @@
 
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { initWebGPU } from '@/src/lib/renderer/initWebGPU';
+import { initWebGPU } from '../lib/renderer/initWebGPU';
 
 export default function RenderPanel() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

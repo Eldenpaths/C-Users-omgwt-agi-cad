@@ -131,9 +131,10 @@ export class FusionTestRunner {
     try {
       const safeDiff = {
         filePath: 'test/sample.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'const x = 2;',
-        justification: 'Safe change',
+        oldContent: 'const x = 1;',
+        newContent: 'const x = 2;',
+        reason: 'Safe change',
+        riskScore: 0.1,
       };
       const result = await modifier.proposeModification(safeDiff, 'test-agent');
       riskScores.push(result.riskScore);
@@ -147,9 +148,10 @@ export class FusionTestRunner {
     try {
       const dangerousDiff = {
         filePath: 'test/sample.ts',
-        oldCode: 'const x = 1;',
-        newCode: 'eval("x = 2");',
-        justification: 'Dangerous change',
+        oldContent: 'const x = 1;',
+        newContent: 'eval("x = 2");',
+        reason: 'Dangerous change',
+        riskScore: 0.9,
       };
       const result = await modifier.proposeModification(dangerousDiff, 'test-agent');
       riskScores.push(result.riskScore);
@@ -165,9 +167,10 @@ export class FusionTestRunner {
     try {
       const driftDiff = {
         filePath: 'test/drift.ts',
-        oldCode: 'const baseline = "stable";',
-        newCode: 'const baseline = "unstable";',
-        justification: 'Drift test',
+        oldContent: 'const baseline = "stable";',
+        newContent: 'const baseline = "unstable";',
+        reason: 'Drift test',
+        riskScore: 0.5,
       };
       const result = await modifier.proposeModification(driftDiff, 'test-agent');
       if (result.driftScore && result.driftScore > 0.1) {
@@ -194,7 +197,7 @@ export class FusionTestRunner {
    */
   private async testConstitutionalGuard() {
     const guard = new ConstitutionalGuard();
-    const constitution = guard.getConstitution();
+    // const constitution = guard.getConstitution();
 
     let passed = 0;
     let failed = 0;
@@ -206,9 +209,10 @@ export class FusionTestRunner {
         name: 'eval() detection',
         diff: {
           filePath: 'test.ts',
-          oldCode: 'const x = 1;',
-          newCode: 'eval("x = 2");',
-          justification: 'Test',
+          oldContent: 'const x = 1;',
+          newContent: 'eval("x = 2");',
+          reason: 'Test',
+          riskScore: 0.9,
         },
         shouldBlock: true,
         isCritical: true,
@@ -217,9 +221,10 @@ export class FusionTestRunner {
         name: 'recursion limit',
         diff: {
           filePath: 'test.ts',
-          oldCode: 'const MAX_DEPTH = 5;',
-          newCode: 'const MAX_DEPTH = 999;',
-          justification: 'Test',
+          oldContent: 'const MAX_DEPTH = 5;',
+          newContent: 'const MAX_DEPTH = 999;',
+          reason: 'Test',
+          riskScore: 0.8,
         },
         shouldBlock: true,
         isCritical: true,
@@ -228,9 +233,10 @@ export class FusionTestRunner {
         name: 'shell execution',
         diff: {
           filePath: 'test.ts',
-          oldCode: 'const x = 1;',
-          newCode: 'require("child_process").exec("ls");',
-          justification: 'Test',
+          oldContent: 'const x = 1;',
+          newContent: 'require("child_process").exec("ls");',
+          reason: 'Test',
+          riskScore: 0.95,
         },
         shouldBlock: true,
         isCritical: true,
@@ -239,9 +245,10 @@ export class FusionTestRunner {
         name: 'safe change',
         diff: {
           filePath: 'test.ts',
-          oldCode: 'const x = 1;',
-          newCode: 'const x = 2;',
-          justification: 'Test',
+          oldContent: 'const x = 1;',
+          newContent: 'const x = 2;',
+          reason: 'Test',
+          riskScore: 0.1,
         },
         shouldBlock: false,
         isCritical: false,
@@ -266,7 +273,7 @@ export class FusionTestRunner {
     }
 
     return {
-      totalRules: constitution.rules.length,
+      totalRules: testCases.length,
       rulesPassed: passed,
       rulesFailed: failed,
       criticalViolationsBlocked: criticalBlocked,
