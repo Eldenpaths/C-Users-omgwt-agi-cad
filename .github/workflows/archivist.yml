@@ -3,7 +3,7 @@ name: Archivist Sweep
 on:
   schedule:
     - cron: "0 */24 * * *"   # once every 24h
-  workflow_dispatch:         # allows manual trigger
+  workflow_dispatch:         # 👈 make sure it's NOT indented too far
 
 jobs:
   run:
