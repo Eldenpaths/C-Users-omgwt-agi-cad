@@ -61,8 +61,8 @@ async function runTests() {
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
   // Import AI Nexus modules (dynamic import for ESM)
-  const { getTaskAnalyzer } = await import('../src/lib/ai/nexus/task-analyzer.ts');
-  const { getAIRouter } = await import('../src/lib/ai/nexus/ai-router.ts');
+  const { getTaskAnalyzer } = await import('../src/lib/ai/nexus/task-analyzer');
+  const { getAIRouter } = await import('../src/lib/ai/nexus/ai-router');
 
   const analyzer = getTaskAnalyzer();
   const router = getAIRouter();
@@ -157,7 +157,7 @@ async function runTests() {
 async function testProviderAvailability() {
   console.log('\n📡 Testing Provider Availability...\n');
 
-  const { getAIRouter } = await import('../src/lib/ai/nexus/ai-router.ts');
+  const { getAIRouter } = await import('../src/lib/ai/nexus/ai-router');
   const router = getAIRouter();
 
   const providers = router.getAllProviders();

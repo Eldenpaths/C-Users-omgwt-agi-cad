@@ -1,6 +1,9 @@
 // CLAUDE-EDIT: Compose ForgeViewer + GlyphConsole + AgentOverlay
 // CLAUDE-META: Phase 9B Hybrid Patch - Nexus Integration
 "use client";
+
+export const dynamic = 'force-dynamic';
+
 import { useGlyphs } from "@/hooks/useGlyphs";
 import { useNexusState } from "@/hooks/useNexusState";
 import { useEffect } from "react";

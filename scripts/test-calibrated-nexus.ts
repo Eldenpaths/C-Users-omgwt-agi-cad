@@ -90,11 +90,11 @@ async function runCalibratedTests() {
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
   // Import modules
-  const { getTaskAnalyzer } = await import('../src/lib/ai/nexus/task-analyzer.ts');
-  const { getContextScorer } = await import('../src/lib/ai/nexus/advanced-context-scorer.ts');
-  const { getRiskDetector } = await import('../src/lib/ai/nexus/financial-risk-detector.ts');
-  const { getFreeTierOptimizer } = await import('../src/lib/ai/nexus/free-tier-optimizer.ts');
-  const { getAIRouter } = await import('../src/lib/ai/nexus/ai-router.ts');
+  const { getTaskAnalyzer } = await import('../src/lib/ai/nexus/task-analyzer');
+  const { getContextScorer } = await import('../src/lib/ai/nexus/advanced-context-scorer');
+  const { getRiskDetector } = await import('../src/lib/ai/nexus/financial-risk-detector');
+  const { getFreeTierOptimizer } = await import('../src/lib/ai/nexus/free-tier-optimizer');
+  const { getAIRouter } = await import('../src/lib/ai/nexus/ai-router');
 
   const taskAnalyzer = getTaskAnalyzer();
   const contextScorer = getContextScorer();

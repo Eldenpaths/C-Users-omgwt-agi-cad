@@ -22,9 +22,9 @@ async function quickValidation() {
 
   try {
     // Import modules dynamically
-    const { getContextScorer } = await import('../src/lib/ai/nexus/advanced-context-scorer.ts');
-    const { getRiskDetector } = await import('../src/lib/ai/nexus/financial-risk-detector.ts');
-    const { getFreeTierOptimizer } = await import('../src/lib/ai/nexus/free-tier-optimizer.ts');
+    const { getContextScorer } = await import('../src/lib/ai/nexus/advanced-context-scorer');
+    const { getRiskDetector } = await import('../src/lib/ai/nexus/financial-risk-detector');
+    const { getFreeTierOptimizer } = await import('../src/lib/ai/nexus/free-tier-optimizer');
 
     // Check 1: Context Scorer
     console.log('Testing Context Scorer...');

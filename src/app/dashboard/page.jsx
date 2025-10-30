@@ -1,5 +1,7 @@
 ﻿'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect } from 'react';
 import Layout from '../../components/Layout';
 import FusionPanel from '../../components/panels/FusionPanel';
