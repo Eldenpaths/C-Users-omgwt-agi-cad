@@ -1,10 +1,11 @@
 // CLAUDE-META: AGI-CAD AI Nexus - AI Router
 // Architect: Claude Code (Sonnet 4.5)
 // Purpose: Route tasks to optimal AI models with cost optimization
-// Status: Production - Phase 11 AI Nexus
+// Status: Production - Phase 11 AI Nexus + Phase 12A Telemetry
 
 import { TaskAnalysis, getTaskAnalyzer } from './task-analyzer';
 import { executeWithProvider as executeWithRealProvider } from './providers';
+import { logNexusMetric } from '@/lib/monitoring/nexus-analytics';
 
 /**
  * AI Provider Configuration
@@ -188,6 +189,26 @@ export class AIRouter {
         break;
       default:
         throw new Error(`Unknown strategy: ${strategy}`);
+    }
+
+    // Phase 12A: Log telemetry metrics to Firestore
+    if (result.execution.primary.success) {
+      try {
+        await logNexusMetric({
+          agentId: 'ai-router',
+          agentName: 'AI Nexus Router',
+          model: result.execution.primary.provider,
+          tokenEstimate: result.taskAnalysis.estimatedTokens,
+          cost: result.metrics.totalCost,
+          latency: result.metrics.totalLatency,
+          complexity: result.taskAnalysis.complexity,
+          strategy: result.strategy,
+          success: true
+        });
+      } catch (telemetryError) {
+        console.warn('Failed to log telemetry:', telemetryError);
+        // Don't fail the routing if telemetry fails
+      }
     }
 
     // Store in history

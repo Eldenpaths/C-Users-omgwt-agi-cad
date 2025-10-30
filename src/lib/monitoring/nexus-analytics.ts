@@ -335,3 +335,72 @@ class NexusAnalytics {
 
 // Singleton instance
 export const nexusAnalytics = new NexusAnalytics();
+
+/**
+ * Standalone function to log Nexus routing metrics
+ * Used for Phase 12A telemetry after AI routing decisions
+ */
+export async function logNexusMetric(params: {
+  agentId: string;
+  agentName: string;
+  model: string;
+  tokenEstimate: number;
+  cost: number;
+  latency: number;
+  complexity: number;
+  strategy?: string;
+  success?: boolean;
+}): Promise<void> {
+  const {
+    agentId,
+    agentName,
+    model,
+    tokenEstimate,
+    cost,
+    latency,
+    complexity,
+    strategy,
+    success = true
+  } = params;
+
+  // Record multiple metrics for comprehensive tracking
+  await Promise.all([
+    // Response time metric
+    nexusAnalytics.recordMetric({
+      agentId,
+      agentName,
+      metricType: 'response_time',
+      value: latency,
+      metadata: { model, strategy, success }
+    }),
+
+    // Token usage metric
+    nexusAnalytics.recordMetric({
+      agentId,
+      agentName,
+      metricType: 'token_usage',
+      value: tokenEstimate,
+      metadata: { model, strategy, success }
+    }),
+
+    // Cost metric
+    nexusAnalytics.recordMetric({
+      agentId,
+      agentName,
+      metricType: 'cost',
+      value: cost,
+      metadata: { model, strategy, success }
+    }),
+
+    // Context score metric (using complexity as a proxy)
+    nexusAnalytics.recordMetric({
+      agentId,
+      agentName,
+      metricType: 'context_score',
+      value: complexity,
+      metadata: { model, strategy, success }
+    })
+  ]);
+
+  console.log(`📊 [Phase 12A] Logged metrics for ${agentName} (${model}): cost=$${cost.toFixed(4)}, latency=${latency}ms, complexity=${complexity.toFixed(3)}`);
+}
