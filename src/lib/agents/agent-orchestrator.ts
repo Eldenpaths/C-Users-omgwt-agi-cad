@@ -5,7 +5,7 @@
  * Uses LangChain.js for agent communication and task delegation.
  */
 
-import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/dist/messages/index.js";
 import {
   STRATEGY_AGENT,
   CODER_AGENT,
@@ -63,7 +63,7 @@ export class AgentOrchestrator {
         new HumanMessage(prompt)
       ];
 
-      const response = await llm.invoke(messages);
+      const response = await (llm as any).invoke(messages);
       const output = typeof response.content === 'string'
         ? response.content
         : JSON.stringify(response.content);

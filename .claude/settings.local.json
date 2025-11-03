@@ -4,7 +4,12 @@
       "Bash(pnpm add:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nPhase 18C: AGI scaffolding with LangChain.js + Pinecone\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(vercel env add:*)",
+      "Bash(git push)",
+      "Bash(git push:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

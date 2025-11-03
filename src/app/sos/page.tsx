@@ -6,6 +6,10 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { ChevronRight } from 'lucide-react';
 import { initializeSystemLabs } from '@/lib/labs/system-labs';
 import { getAllAreas, getLabsForArea, getLab, type Area } from '@/lib/labs/registry';
+import MissAvakAvatar from '@/components/sos/MissAvak/Avatar';
+import AgentStatus from '@/components/sos/AgentStatus';
+import CanonSidebar from '@/components/sos/CanonSidebar';
+import SmartSuggestions from '@/components/sos/SmartSuggestions';
 
 export default function SOSPage() {
   const { user } = useAuth();
@@ -109,6 +113,14 @@ export default function SOSPage() {
                   )}
                 </div>
               ))
+            )}
+
+            {/* Smart Suggestions at bottom of VAULT */}
+            {!loading && experiments.length > 0 && (
+              <SmartSuggestions
+                experimentId={selectedExperiment || undefined}
+                labId={selectedArea}
+              />
             )}
           </div>
         </aside>
@@ -282,6 +294,11 @@ export default function SOSPage() {
           </div>
         </main>
       </div>
+
+      {/* Overlay Components */}
+      <MissAvakAvatar />
+      <AgentStatus />
+      <CanonSidebar />
 
       <style jsx>{`
         @keyframes spin-slow {
