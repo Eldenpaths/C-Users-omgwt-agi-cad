@@ -58,6 +58,34 @@ export default function Home() {
               <p className="text-amber-400">AI agent orchestration</p>
             </div>
           </Link>
+
+          <Link href="/nexus">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Nexus</h2>
+              <p className="text-amber-400">Multi-layout glyph visualizer</p>
+            </div>
+          </Link>
+
+          <Link href="/labs">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Science Labs</h2>
+              <p className="text-amber-400">Physics simulation infrastructure</p>
+            </div>
+          </Link>
+
+          <Link href="/plasma-lab">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Plasma Lab</h2>
+              <p className="text-amber-400">Real-time plasma physics</p>
+            </div>
+          </Link>
+
+          <Link href="/agent-demo">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">AI Agent Demo</h2>
+              <p className="text-amber-400">Natural language lab control</p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>

@@ -1,0 +1,35 @@
+import * as THREE from "three";
+import { GlyphNode } from "@/lib/glyph/schema";
+import { getPulseScale, getWarpRotation, getDriftOffset } from "@/lib/glyph/animSpec";
+
+export class NexusGlyphAnimator {
+  group: THREE.Group;
+  meshes: Record<string, THREE.Mesh> = {};
+
+  constructor(scene: THREE.Scene, glyphRoot: THREE.Group) {
+    this.group = glyphRoot;
+    scene.add(this.group);
+  }
+
+  update(nodes: GlyphNode[], ets: Record<string, any>, t: number) {
+    nodes.forEach((node, i) => {
+      let mesh = this.meshes[node.id];
+      if (!mesh) {
+        mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.6, 16, 16),
+          new THREE.MeshStandardMaterial({ color: node.color || "#fff" })
+        );
+        mesh.position.x = (i - nodes.length / 2) * 3;
+        this.group.add(mesh);
+        this.meshes[node.id] = mesh;
+      }
+      const e = ets[node.id] || { latency: 0, risk: 0, complexity: 0 };
+      const s = getPulseScale(e.latency, t);
+      const r = getWarpRotation(e.risk, t);
+      const d = getDriftOffset(e.complexity, t);
+      mesh.scale.setScalar(s);
+      mesh.rotation.y = r;
+      mesh.position.add(d);
+    });
+  }
+}

@@ -1,5 +1,6 @@
 // CLAUDE-EDIT: Import global styles for Tailwind + Forge theme
 import '../../styles/globals.css'
+import { AuthProvider } from '@/lib/auth/AuthContext'
 
 export const metadata = {
   title: 'AGI-CAD Core',
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   )
 }
