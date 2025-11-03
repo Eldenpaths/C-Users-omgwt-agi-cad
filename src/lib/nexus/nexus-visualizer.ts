@@ -47,7 +47,7 @@ import {
 } from '@/lib/labfidelity/simulator';
 
 // ── Telemetry / Logging ─────────────────────────────────────────────────────────
-import { db } from '@/lib/firebase';
+import { getFirestoreInstance } from '@/lib/firebase';
 import {
   collection, query, onSnapshot, Unsubscribe, DocumentData,
 } from 'firebase/firestore';
@@ -277,7 +277,7 @@ export class NexusVisualizer {
   private beginTelemetryStream() {
     // lab_telemetry expected shape:
     // doc.id === LabId, data: { latency:number, risk:number, complexity:number }
-    const q = query(collection(db, 'lab_telemetry'));
+    const q = query(collection(getFirestoreInstance(), 'lab_telemetry'));
     this.unsub = onSnapshot(q, (snap) => {
       const next: Partial<ETSByLab> = {};
       snap.forEach((doc) => {

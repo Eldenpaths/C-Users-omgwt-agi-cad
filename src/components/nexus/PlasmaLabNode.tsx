@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { RefreshCw, Zap, Disc, Wind, Target, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Zap, Disc, Wind, Target, ArrowLeft, Save } from 'lucide-react';
+import { useExperiments } from '@/hooks/useExperiments';
 
 /**
  * DELIVERABLE 1: PlasmaSimulator.ts (Implemented internally for single-file runtime)
@@ -158,10 +159,23 @@ const PlasmaLabNode = () => {
     const [inputTemp, setInputTemp] = useState(5000);
     const [statusMessage, setStatusMessage] = useState('Initializing...');
 
+    // Experiment persistence
+    const { saveExperiment } = useExperiments('plasma');
+    const [isSaving, setIsSaving] = useState(false);
+    const [commandHistory, setCommandHistory] = useState<Array<{timestamp: number, command: string, params: any}>>([]);
+
     // Function to handle agent commands
     const handleCommand = useCallback((action: string, params: any = {}) => {
         if (simulator) {
             simulator.command(action, params);
+
+            // Track command history for persistence
+            setCommandHistory(prev => [...prev, {
+                timestamp: Date.now(),
+                command: action,
+                params
+            }]);
+
             let msg = '';
             switch (action) {
                 case 'heat':
@@ -182,6 +196,32 @@ const PlasmaLabNode = () => {
             setStatusMessage(msg);
         }
     }, [simulator]);
+
+    // Save experiment handler
+    const handleSave = async () => {
+        if (!simulator) return;
+
+        setIsSaving(true);
+        try {
+            const experimentId = await saveExperiment({
+                labId: 'plasma',
+                title: `Plasma Experiment ${new Date().toLocaleString()}`,
+                description: statusMessage,
+                commands: commandHistory as any,
+                finalState: simulator.getVisualizationData(),
+                tags: ['plasma', 'physics'],
+                isPublic: false,
+                status: 'completed'
+            });
+
+            alert(`Experiment saved! ID: ${experimentId}`);
+            setCommandHistory([]); // Reset history
+        } catch (error: any) {
+            alert('Failed to save experiment: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // UseEffect to manage the 30 FPS simulation loop (Simulates Pub/Sub subscription)
     useEffect(() => {
@@ -362,6 +402,14 @@ const PlasmaLabNode = () => {
                         >
                             <RefreshCw className="w-4 h-4 inline mr-2" />
                             REFILL Fuel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving || commandHistory.length === 0}
+                            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition duration-150 shadow-md shadow-purple-900/50"
+                        >
+                            <Save className="w-4 h-4 inline mr-2" />
+                            {isSaving ? 'Saving...' : 'SAVE Experiment'}
                         </button>
                     </div>
 

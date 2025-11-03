@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { onSnapshot, query, orderBy, limit } from "firebase/firestore";
-import { driftMapRef } from "@/lib/firestore/driftMapSchema";
+import { getDriftMapRef } from "@/lib/firestore/driftMapSchema";
 import eventBus from "@/lib/EventBus"; // if you already have an eventBus
 
 // --- DriftMap math utilities (from Mistral) ---
@@ -44,7 +44,7 @@ export default function DriftMap() {
   const [clusters, setClusters] = useState<any[]>([]);
 
   useEffect(() => {
-    const q = query(driftMapRef, orderBy("createdAt", "desc"), limit(100));
+    const q = query(getDriftMapRef(), orderBy("createdAt", "desc"), limit(100));
     const unsub = onSnapshot(q, (snap) =>
       setClusters(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );

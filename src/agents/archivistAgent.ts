@@ -4,6 +4,7 @@
  */
 
 import { getFirestoreInstance } from "../lib/firebase";
+import { collection, doc, getDocs, setDoc, addDoc } from "firebase/firestore";
 import { VaultLogger } from "../lib/vault/vault-logger"; // ✅ Relative path for Node runtime
 
 export interface CanonLab {
@@ -17,11 +18,11 @@ export interface CanonLab {
 
 export async function archivistSweep() {
   const db = getFirestoreInstance();
-  const canonRef = db.collection("canon_registry");
-  const logsRef = db.collection("project_logs");
+  const canonRef = collection(db, "canon_registry");
+  const logsRef = collection(db, "project_logs");
 
   // Scan project logs
-  const snapshot = await logsRef.get();
+  const snapshot = await getDocs(logsRef);
   const mentions: Record<string, CanonLab> = {};
 
   snapshot.forEach((doc) => {
@@ -43,7 +44,8 @@ export async function archivistSweep() {
 
   // Write canonical registry updates
   for (const lab of Object.values(mentions)) {
-    await canonRef.doc(lab.name).set(
+    await setDoc(
+      doc(canonRef, lab.name),
       { ...lab, lastSeen: new Date().toISOString() },
       { merge: true }
     );
@@ -52,7 +54,7 @@ export async function archivistSweep() {
   // Log to both collections
   const total = Object.keys(mentions).length;
 
-  await db.collection("system_reports").add({
+  await addDoc(collection(db, "system_reports"), {
     type: "continuum_update",
     totalIndexed: total,
     timestamp: new Date().toISOString(),

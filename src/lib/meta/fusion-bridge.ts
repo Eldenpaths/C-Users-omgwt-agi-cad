@@ -3,7 +3,7 @@
 // Purpose: Vault ↔ Forge sync + Drift/Trust telemetry to Firestore
 // Status: Production - Phase 10E Active
 
-import { db } from '../firebase';
+import { getFirestoreInstance } from '../firebase';
 import {
   collection,
   doc,
@@ -106,7 +106,7 @@ export class FusionBridge {
    */
   async logDrift(data: DriftTelemetry) {
     try {
-      const telemetryDoc = doc(collection(db, 'telemetry'));
+      const telemetryDoc = doc(collection(getFirestoreInstance(), 'telemetry'));
 
       await setDoc(telemetryDoc, {
         type: 'drift',
@@ -143,7 +143,7 @@ export class FusionBridge {
    */
   async logTrust(data: TrustTelemetry) {
     try {
-      const telemetryDoc = doc(collection(db, 'telemetry'));
+      const telemetryDoc = doc(collection(getFirestoreInstance(), 'telemetry'));
 
       await setDoc(telemetryDoc, {
         type: 'trust',
@@ -181,7 +181,7 @@ export class FusionBridge {
    */
   async logRollback(data: RollbackTelemetry) {
     try {
-      const telemetryDoc = doc(collection(db, 'telemetry'));
+      const telemetryDoc = doc(collection(getFirestoreInstance(), 'telemetry'));
 
       await setDoc(telemetryDoc, {
         type: 'rollback',
@@ -215,7 +215,7 @@ export class FusionBridge {
    */
   async logModification(agentId: string, filePath: string, approved: boolean, riskScore: number) {
     try {
-      const telemetryDoc = doc(collection(db, 'telemetry'));
+      const telemetryDoc = doc(collection(getFirestoreInstance(), 'telemetry'));
 
       await setDoc(telemetryDoc, {
         type: 'modification',
@@ -236,7 +236,7 @@ export class FusionBridge {
    * Subscribe to Vault state changes
    */
   private subscribeToVaultState() {
-    const docRef = doc(db, 'vaultState', 'current');
+    const docRef = doc(getFirestoreInstance(), 'vaultState', 'current');
 
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -264,7 +264,7 @@ export class FusionBridge {
    */
   private subscribeToForgeEvents() {
     // Listen to forgeStatus document for Forge events
-    const docRef = doc(db, 'forgeStatus', 'current');
+    const docRef = doc(getFirestoreInstance(), 'forgeStatus', 'current');
 
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -281,7 +281,7 @@ export class FusionBridge {
    */
   private subscribeToTelemetry() {
     const telemetryQuery = query(
-      collection(db, 'telemetry'),
+      collection(getFirestoreInstance(), 'telemetry'),
       orderBy('timestamp', 'desc'),
       limit(50)
     );
