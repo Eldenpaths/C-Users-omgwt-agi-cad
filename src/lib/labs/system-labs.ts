@@ -16,6 +16,8 @@
 import { registerLab, registerArea } from './registry';
 import PlasmaLab from './components/PlasmaLab';
 import SpectralLab from './components/SpectralLab';
+import ChemistryLab from '../../components/sos/chemistry/ChemistryLab';
+import CryptoLab from '../../components/sos/crypto/CryptoLab';
 
 /**
  * Initialize all system labs and areas
@@ -54,23 +56,37 @@ export function initializeSystemLabs() {
     featured: true,
   });
 
+  registerLab({
+    id: 'chemistry',
+    name: 'Chemistry Lab',
+    description: 'Build molecules, visualize structures, and simulate chemical reactions',
+    icon: '🧪',
+    creator: 'system',
+    category: 'science',
+    component: ChemistryLab,
+    permissions: [], // Public
+    tags: ['chemistry', 'molecules', 'reactions', '3d', 'visualization'],
+    version: '1.0.0',
+    featured: true,
+  });
+
   // ============================================================
-  // CRYPTO AREA LABS (Future)
+  // CRYPTO AREA LABS
   // ============================================================
 
-  // Placeholder for future crypto labs
-  // registerLab({
-  //   id: 'token-simulator',
-  //   name: 'Token Economics Lab',
-  //   description: 'Model token supply, demand, and market dynamics',
-  //   icon: '💰',
-  //   creator: 'system',
-  //   category: 'crypto',
-  //   component: TokenSimulatorLab,
-  //   permissions: [],
-  //   tags: ['tokenomics', 'defi', 'economics'],
-  //   version: '1.0.0',
-  // });
+  registerLab({
+    id: 'crypto-market',
+    name: 'Crypto Market Simulator',
+    description: 'Simulate cryptocurrency markets with AI trading bots',
+    icon: '💰',
+    creator: 'system',
+    category: 'crypto',
+    component: CryptoLab,
+    permissions: [],
+    tags: ['crypto', 'trading', 'bots', 'market', 'simulation'],
+    version: '1.0.0',
+    featured: true,
+  });
 
   // ============================================================
   // DESIGN AREA LABS (Future)
@@ -100,7 +116,7 @@ export function initializeSystemLabs() {
     description: 'Physics, chemistry, and natural sciences',
     icon: '🔬',
     color: 'cyan',
-    labs: ['plasma', 'spectral'],
+    labs: ['plasma', 'spectral', 'chemistry'],
   });
 
   registerArea({
@@ -109,7 +125,7 @@ export function initializeSystemLabs() {
     description: 'Blockchain, tokenomics, and decentralized systems',
     icon: '₿',
     color: 'emerald',
-    labs: [], // To be populated in future phases
+    labs: ['crypto-market'],
   });
 
   registerArea({
