@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useExperiments } from '@/hooks/useExperiments';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Shield } from 'lucide-react';
 import { initializeSystemLabs } from '@/lib/labs/system-labs';
 import { getAllAreas, getLabsForArea, getLab, type Area } from '@/lib/labs/registry';
 import MissAvakAvatar from '@/components/sos/MissAvak/Avatar';
 import AgentStatus from '@/components/sos/AgentStatus';
 import CanonSidebar from '@/components/sos/CanonSidebar';
 import SmartSuggestions from '@/components/sos/SmartSuggestions';
+import Link from 'next/link';
 
 export default function SOSPage() {
   const { user } = useAuth();
@@ -130,13 +131,25 @@ export default function SOSPage() {
 
           {/* Header */}
           <header className="border-b border-amber-500/30 bg-black/50 backdrop-blur-sm">
-            <div className="px-8 py-6">
-              <h1 className="text-4xl font-bold text-amber-400 tracking-wider mb-2">
-                ⬡ SYMBOLIC OPERATING SYSTEM
-              </h1>
-              <p className="text-amber-500/70 text-sm">
-                Unified Consciousness Interface • {user?.email || 'Not signed in'}
-              </p>
+            <div className="px-8 py-6 flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold text-amber-400 tracking-wider mb-2">
+                  ⬡ SYMBOLIC OPERATING SYSTEM
+                </h1>
+                <p className="text-amber-500/70 text-sm">
+                  Unified Consciousness Interface • {user?.email || 'Not signed in'}
+                </p>
+              </div>
+
+              {/* Admin Link */}
+              <Link
+                href="/admin"
+                className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700 hover:border-amber-500/50 rounded-lg transition-all flex items-center gap-2 text-gray-300 hover:text-amber-400"
+                title="Admin Dashboard - CVRA Learning & Agent Traces"
+              >
+                <Shield className="w-4 h-4" />
+                <span className="text-sm font-medium">Admin</span>
+              </Link>
             </div>
           </header>
 
