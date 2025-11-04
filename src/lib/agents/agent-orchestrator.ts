@@ -3,6 +3,8 @@
  *
  * Coordinates multiple specialized agents to solve complex tasks.
  * Uses LangChain.js for agent communication and task delegation.
+ *
+ * ENHANCED: Now includes agent trace logging for debugging and learning (Phase 19A)
  */
 
 import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/dist/messages/index.js";
@@ -13,6 +15,7 @@ import {
   createLLM,
   type AgentRole
 } from './agent-config';
+import { logAgentAction, AgentTrace } from '../logging/agent-tracer';
 
 export interface TaskResult {
   success: boolean;
@@ -50,9 +53,12 @@ export class AgentOrchestrator {
 
   /**
    * Execute a single agent with a specific prompt
+   * NOW WITH TRACE LOGGING (Phase 19A)
    */
   private async executeAgent(agent: AgentRole, prompt: string): Promise<TaskResult> {
     const startTime = Date.now();
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
     try {
       this.log(`Executing ${agent.name}...`);
@@ -68,7 +74,30 @@ export class AgentOrchestrator {
         ? response.content
         : JSON.stringify(response.content);
 
-      this.log(`${agent.name} completed in ${Date.now() - startTime}ms`);
+      const duration = Date.now() - startTime;
+      this.log(`${agent.name} completed in ${duration}ms`);
+
+      // Log successful action
+      const trace: AgentTrace = {
+        agentId: agent.id,
+        agentType: agent.id === 'strategy' ? 'orchestration' : agent.id === 'coder' ? 'execution' : 'research',
+        action: `execute_${agent.id}`,
+        input: { prompt, systemPrompt: agent.systemPrompt },
+        output: { content: output },
+        timestamp: new Date(),
+        duration,
+        confidence: 0.9, // Default confidence for successful LLM calls
+        errors,
+        warnings,
+        metadata: {
+          agentName: agent.name,
+        },
+      };
+
+      // Log asynchronously (don't block)
+      logAgentAction(trace).catch(err => {
+        console.error('[Orchestrator] Failed to log trace:', err);
+      });
 
       return {
         success: true,
@@ -78,7 +107,31 @@ export class AgentOrchestrator {
         timestamp: Date.now()
       };
     } catch (error: any) {
+      const duration = Date.now() - startTime;
       this.log(`${agent.name} failed: ${error.message}`);
+      errors.push(error.message);
+
+      // Log failed action
+      const trace: AgentTrace = {
+        agentId: agent.id,
+        agentType: agent.id === 'strategy' ? 'orchestration' : agent.id === 'coder' ? 'execution' : 'research',
+        action: `execute_${agent.id}`,
+        input: { prompt },
+        output: null,
+        timestamp: new Date(),
+        duration,
+        confidence: 0,
+        errors,
+        warnings,
+        metadata: {
+          agentName: agent.name,
+        },
+      };
+
+      // Log asynchronously
+      logAgentAction(trace).catch(err => {
+        console.error('[Orchestrator] Failed to log error trace:', err);
+      });
 
       return {
         success: false,

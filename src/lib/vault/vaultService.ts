@@ -1,6 +1,8 @@
 /**
  * Phase 18: Vault Service
  * Storage operations for vault entries with Firestore integration
+ *
+ * Phase 19A Enhancement: Schema validation using Zod
  */
 
 import { getFirestoreInstance } from '../firebase';
@@ -38,6 +40,12 @@ import {
   ArtifactEntry,
 } from './vaultTypes';
 import { createHash } from 'crypto';
+import {
+  validateVaultEntry,
+  validateLabData,
+  formatValidationErrors,
+  logValidationFailure,
+} from '../schemas/vault-events';
 
 // ============================================================================
 // Constants
@@ -53,12 +61,73 @@ const VAULT_STATS_COLLECTION = 'vault_statistics';
 
 export class VaultService {
   private db = getFirestoreInstance();
+  private validationEnabled = true; // Can be disabled for testing
+
+  // ========================================================================
+  // Validation Operations (Phase 19A)
+  // ========================================================================
+
+  /**
+   * Enable or disable schema validation
+   */
+  setValidationEnabled(enabled: boolean): void {
+    this.validationEnabled = enabled;
+    console.log(`[Vault] Schema validation ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Validate a lab experiment entry against its schema
+   */
+  private async validateEntry<T extends VaultEntry>(entry: T): Promise<{
+    valid: boolean;
+    errors?: string[];
+  }> {
+    if (!this.validationEnabled) {
+      return { valid: true };
+    }
+
+    try {
+      // Check if this is a lab entry (has labId in data)
+      const labId = (entry as any).labId || (entry as any).data?.labId;
+
+      if (labId) {
+        // Validate lab-specific data
+        const result = validateLabData(labId, entry);
+
+        if (!result.success) {
+          const errors = formatValidationErrors(result.errors!);
+
+          // Log validation failure for CVRA analysis
+          await logValidationFailure(labId, entry, result.errors!);
+
+          console.warn(`[Vault] Schema validation failed for ${labId}:`, errors);
+          return { valid: false, errors };
+        }
+      }
+
+      // Validate as general vault entry if no labId
+      // Note: This uses our old VaultEntry interface, which may differ from the new schemas
+      // For now, we'll skip this validation if it's a recognized lab type
+
+      return { valid: true };
+    } catch (error) {
+      console.error('[Vault] Validation error:', error);
+      // Don't block saves on validation errors
+      return { valid: true };
+    }
+  }
 
   // ========================================================================
   // Create Operations
   // ========================================================================
 
   async createEntry<T extends VaultEntry>(entry: T): Promise<string> {
+    // Validate entry before saving (Phase 19A)
+    const validation = await this.validateEntry(entry);
+    if (!validation.valid && validation.errors) {
+      console.warn('[Vault] Entry validation failed, but saving anyway:', validation.errors);
+      // For Phase 19A, we log but don't block - in Phase 19B we can make this strict
+    }
     const metadata: VaultEntryMetadata = {
       id: '', // Will be set by Firestore
       type: entry.metadata.type,
