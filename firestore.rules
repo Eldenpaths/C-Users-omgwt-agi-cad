@@ -113,5 +113,34 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
     }
+
+    // Learning sessions (validated experiment records for analytics)
+    match /learning_sessions/{sessionId} {
+      // Allow owners to read their own sessions
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow owners to create new sessions
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Updates are restricted; canonical records should be immutable in client flows
+      allow update, delete: if false;
+    }
+
+    // CVRA suggestions (append-only per session)
+    match /cvra_suggestions/{suggestionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if false; // immutable suggestions; use admin tools to revise
+    }
+
+    // Simulation metadata and runs
+    match /simulations/{simId} {
+      // Allow owners to read their own simulation definitions/state
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow owners to create new simulations
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow updates to status-only fields
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Deletion optional; allow owner
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
   }
 }

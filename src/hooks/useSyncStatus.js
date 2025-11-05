@@ -1,7 +1,7 @@
 // /hooks/useSyncStatus.js
 import { useEffect, useState } from "react";
 import { onSnapshotsInSync } from "firebase/firestore";
-import { db } from "../lib/firebase.js";
+import { db } from '../lib/firebase-legacy.js';
 import { subscribe, getPendingCount } from "../lib/syncFlag.js";
 
 export default function useSyncStatus() {

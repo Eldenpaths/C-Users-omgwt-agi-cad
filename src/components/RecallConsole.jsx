@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { db } from "../lib/firebase.js";
+import { db } from '../lib/firebase-legacy.js';
 import { collection, onSnapshot, orderBy, query, limit } from "firebase/firestore";
 
 

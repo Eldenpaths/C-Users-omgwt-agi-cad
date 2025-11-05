@@ -44,12 +44,12 @@ export const VaultEntrySchema = BaseExperimentSchema.extend({
   description: z.string().optional(),
 
   // Lab-specific data (validated separately)
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
 
   // Results and metrics
   results: z.object({
     success: z.boolean(),
-    metrics: z.record(z.number()).optional(),
+    metrics: z.record(z.string(), z.number()).optional(),
     visualizations: z.array(z.string()).optional(), // URLs or base64
     errors: z.array(z.string()).default([]),
   }),
@@ -175,7 +175,7 @@ export const BotPerformanceSchema = z.object({
 
   portfolio: z.object({
     cash: z.number(),
-    holdings: z.record(z.number()),
+    holdings: z.record(z.string(), z.number()),
     totalValue: z.number(),
   }),
 
@@ -239,7 +239,7 @@ export const PlasmaStateSchema = z.object({
   ionization: z.number().min(0).max(1), // 0-100%
   pressure: z.number().nonnegative(),
 
-  composition: z.record(z.number()).optional(), // element -> percentage
+  composition: z.record(z.string(), z.number()).optional(), // element -> percentage
 });
 
 /**
@@ -309,7 +309,7 @@ export const SpectralExperimentSchema = BaseExperimentSchema.extend({
 
     analysis: z.object({
       dominantWavelength: z.number().positive().optional(),
-      elementalComposition: z.record(z.number()).optional(),
+      elementalComposition: z.record(z.string(), z.number()).optional(),
       spectralClass: z.string().optional(),
     }).optional(),
   }),
@@ -387,7 +387,7 @@ export function validateVaultEntry(entry: any): {
  * Extract validation errors as strings
  */
 export function formatValidationErrors(errors: z.ZodError): string[] {
-  return errors.errors.map(err => {
+  return errors.issues.map(err => {
     const path = err.path.join('.');
     return `${path}: ${err.message}`;
   });

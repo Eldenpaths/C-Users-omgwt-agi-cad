@@ -17,7 +17,7 @@ import {
   ThumbsDown,
   Eye,
 } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { getDbInstance } from '@/lib/firebase';
 import {
   collection,
   query,
@@ -38,6 +38,8 @@ export default function CVRASuggestions() {
 
   // Real-time suggestions subscription
   useEffect(() => {
+    const db = getDbInstance();
+
     let q =
       filter === 'all'
         ? query(
@@ -84,6 +86,7 @@ export default function CVRASuggestions() {
   // Approve suggestion
   const handleApprove = async (suggestionId: string) => {
     try {
+      const db = getDbInstance();
       await updateDoc(doc(db, 'cvra-suggestions', suggestionId), {
         status: 'approved',
         reviewedAt: new Date().toISOString(),
@@ -97,6 +100,7 @@ export default function CVRASuggestions() {
   // Reject suggestion
   const handleReject = async (suggestionId: string) => {
     try {
+      const db = getDbInstance();
       await updateDoc(doc(db, 'cvra-suggestions', suggestionId), {
         status: 'rejected',
         reviewedAt: new Date().toISOString(),

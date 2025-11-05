@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { getDbInstance } from '@/lib/firebase';
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { AgentTrace } from '@/lib/logging/agent-tracer';
 
@@ -33,6 +33,8 @@ export default function AgentTraceViewer() {
 
   // Real-time trace subscription
   useEffect(() => {
+    const db = getDbInstance();
+
     let q = query(
       collection(db, 'agent-traces'),
       orderBy('timestamp', 'desc'),

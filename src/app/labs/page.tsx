@@ -5,6 +5,9 @@
 
 'use client';
 
+// Disable static generation to prevent Firebase client code from running during build
+export const dynamic = 'force-dynamic';
+
 import React from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/auth/AuthGuard';

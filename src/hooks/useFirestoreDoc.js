@@ -9,7 +9,7 @@ import {
   serverTimestamp
 } from "firebase/firestore";
 import useDebouncedCallback from "./useDebouncedCallback.js";
-import { db } from "../lib/firebase.js";
+import { db } from '../lib/firebase-legacy.js';
 import { syncStatusManager } from "../lib/syncStatus.js";
 
 export function useFirestoreDoc({

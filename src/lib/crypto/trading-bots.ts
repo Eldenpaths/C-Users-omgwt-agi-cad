@@ -160,7 +160,7 @@ export abstract class BaseBot {
   protected calculateRSI(period: number = 14): number {
     if (this.priceHistory.length < period + 1) return 50;
 
-    const changes = [];
+    const changes: number[] = [];
     for (let i = 1; i < this.priceHistory.length; i++) {
       changes.push(this.priceHistory[i].price - this.priceHistory[i - 1].price);
     }

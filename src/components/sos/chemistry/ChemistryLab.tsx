@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sphere, Cylinder } from '@react-three/drei';
 import {
-  Flask,
   Atom,
   Beaker,
   Trash2,
@@ -121,7 +120,7 @@ export default function ChemistryLab() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Flask className="w-5 h-5 text-amber-400" />
+            <Beaker className="w-5 h-5 text-amber-400" />
             <h3 className="text-lg font-semibold text-amber-400">Chemistry Lab</h3>
           </div>
           <button

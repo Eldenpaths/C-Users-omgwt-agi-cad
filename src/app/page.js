@@ -38,6 +38,27 @@ export default function Home() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <Link href="/simulation/dashboard">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Simulation</h2>
+              <p className="text-amber-400">Run lab simulators + charts</p>
+            </div>
+          </Link>
+
+          <Link href="/cognitive/dashboard">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Cognitive</h2>
+              <p className="text-amber-400">CVRA suggestions and analysis</p>
+            </div>
+          </Link>
+
+          <Link href="/learning/dashboard">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Learning</h2>
+              <p className="text-amber-400">Sessions, telemetry, analytics</p>
+            </div>
+          </Link>
+
           <Link href="/dashboard">
             <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
               <h2 className="text-2xl font-serif mb-3">Dashboard</h2>

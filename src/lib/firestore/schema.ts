@@ -17,7 +17,7 @@ export interface UserProfile {
 export interface Experiment {
   id: string;
   userId: string;
-  labId: 'plasma' | 'spectral';
+  labId: 'plasma' | 'spectral' | 'chemistry' | 'crypto-market';
   title: string;
   description?: string;
   createdAt: Timestamp;

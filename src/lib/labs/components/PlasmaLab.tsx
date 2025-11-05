@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
 import { Zap, Wind, RefreshCw, Target } from 'lucide-react';
 
 // Simplified PlasmaSimulator
@@ -55,6 +56,8 @@ class PlasmaSimulator {
 export default function PlasmaLab() {
   const [simulator, setSimulator] = useState<PlasmaSimulator | null>(null);
   const [plasmaState, setPlasmaState] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const sim = new PlasmaSimulator();
@@ -73,6 +76,46 @@ export default function PlasmaLab() {
   const handleCommand = (action: string, params: any = {}) => {
     if (simulator) {
       simulator.command(action, params);
+    }
+  };
+
+  const handleSaveSession = async () => {
+    if (!plasmaState) return;
+    const user = auth?.currentUser;
+    if (!user) {
+      setSaveMsg('Please sign in to save sessions.');
+      return;
+    }
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const payload = {
+        labType: 'plasma',
+        userId: user.uid,
+        data: {
+          experimentId: `plasma-${Date.now()}`,
+          temperatureKeV: Math.max(0.01, plasmaState.temperature_K / 1.16e7),
+          density: Math.max(0.0001, plasmaState.pressure_Pa / 101325),
+          confinementTimeMs: 250,
+          runtimeMs: 1000,
+          success: plasmaState.ionization_percent > 10,
+          errors: [],
+          notes: 'Logged from PlasmaLab UI',
+        },
+      };
+
+      const res = await fetch('/api/learning/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Failed to ingest');
+      setSaveMsg(`Saved session ${json.sessionId}`);
+    } catch (e: any) {
+      setSaveMsg(`Save failed: ${e.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -96,7 +139,7 @@ export default function PlasmaLab() {
       </div>
 
       {/* Controls */}
-      <div className="space-y-3">
+      <div className="space-y-3 relative z-10">
         <button
           onClick={() => handleCommand('heat', { flux: 1500 })}
           className="w-full px-4 py-2 bg-amber-600 hover:bg-amber-500 text-amber-950 rounded font-semibold transition-colors flex items-center justify-center gap-2"
@@ -121,6 +164,17 @@ export default function PlasmaLab() {
         >
           <RefreshCw className="w-4 h-4" /> REFILL
         </button>
+        <div className="pt-2 border-t border-amber-500/20" />
+        <button
+          onClick={handleSaveSession}
+          disabled={saving}
+          className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-900/40 text-emerald-50 rounded font-semibold transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save Learning Session'}
+        </button>
+        {saveMsg ? (
+          <p className="text-amber-300 text-sm">{saveMsg}</p>
+        ) : null}
       </div>
     </div>
   );

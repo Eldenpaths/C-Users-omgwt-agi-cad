@@ -5,7 +5,7 @@
  * Enables similarity search across VAULT experiments.
  */
 
-import { Pinecone } from '@pinecone-database/pinecone';
+import { Pinecone, RecordMetadata } from '@pinecone-database/pinecone';
 import { OpenAI } from 'openai';
 
 // Pinecone configuration
@@ -68,8 +68,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     });
 
     return response.data[0].embedding;
-  } catch (error: any) {
-    console.error('[Vector Service] Embedding generation failed:', error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Vector Service] Embedding generation failed:', message);
     throw error;
   }
 }
@@ -80,7 +81,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 export async function storeEmbedding(
   id: string,
   vector: number[],
-  metadata: Record<string, any>
+  metadata: RecordMetadata
 ): Promise<void> {
   try {
     const pinecone = getPineconeClient();
@@ -95,8 +96,9 @@ export async function storeEmbedding(
     ]);
 
     console.log(`[Vector Service] Stored embedding for ${id}`);
-  } catch (error: any) {
-    console.error('[Vector Service] Storage failed:', error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Vector Service] Storage failed:', message);
     throw error;
   }
 }
@@ -107,8 +109,8 @@ export async function storeEmbedding(
 export async function findSimilar(
   vector: number[],
   topK = 5,
-  filter?: Record<string, any>
-): Promise<Array<{ id: string; score: number; metadata: Record<string, any> }>> {
+  filter?: RecordMetadata
+): Promise<Array<{ id: string; score: number; metadata: RecordMetadata }>> {
   try {
     const pinecone = getPineconeClient();
     const index = pinecone.index(PINECONE_INDEX_NAME);
@@ -123,10 +125,11 @@ export async function findSimilar(
     return queryResponse.matches.map((match) => ({
       id: match.id,
       score: match.score || 0,
-      metadata: match.metadata as Record<string, any>,
+      metadata: (match.metadata || {}) as RecordMetadata,
     }));
-  } catch (error: any) {
-    console.error('[Vector Service] Similarity search failed:', error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Vector Service] Similarity search failed:', message);
     throw error;
   }
 }
@@ -137,8 +140,8 @@ export async function findSimilar(
 export async function findSimilarByText(
   query: string,
   topK = 5,
-  filter?: Record<string, any>
-): Promise<Array<{ id: string; score: number; metadata: Record<string, any> }>> {
+  filter?: RecordMetadata
+): Promise<Array<{ id: string; score: number; metadata: RecordMetadata }>> {
   const embedding = await generateEmbedding(query);
   return findSimilar(embedding, topK, filter);
 }
@@ -154,8 +157,9 @@ export async function deleteEmbedding(id: string): Promise<void> {
     await index.deleteOne(id);
 
     console.log(`[Vector Service] Deleted embedding ${id}`);
-  } catch (error: any) {
-    console.error('[Vector Service] Deletion failed:', error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Vector Service] Deletion failed:', message);
     throw error;
   }
 }
@@ -232,8 +236,9 @@ export async function initializePineconeIndex(): Promise<void> {
     } else {
       console.log('[Vector Service] Index already exists');
     }
-  } catch (error: any) {
-    console.error('[Vector Service] Index initialization failed:', error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Vector Service] Index initialization failed:', message);
     throw error;
   }
 }

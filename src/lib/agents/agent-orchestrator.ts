@@ -7,7 +7,7 @@
  * ENHANCED: Now includes agent trace logging for debugging and learning (Phase 19A)
  */
 
-import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/dist/messages/index.js";
+import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
 import {
   STRATEGY_AGENT,
   CODER_AGENT,

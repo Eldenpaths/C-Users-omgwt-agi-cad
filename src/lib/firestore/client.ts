@@ -15,6 +15,11 @@ import {
 } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firebase';
 import { Experiment, UserProfile, TelemetrySnapshot } from './schema';
+import {
+  validateLabData,
+  formatValidationErrors,
+  logValidationFailure,
+} from '@/lib/schemas/vault-events';
 
 export class FirestoreClient {
 
@@ -24,6 +29,29 @@ export class FirestoreClient {
     userId: string,
     experiment: Omit<Experiment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
   ): Promise<string> {
+    // PHASE 19A: Schema validation before save
+    const validationResult = validateLabData(experiment.labId, {
+      ...experiment,
+      timestamp: new Date(),
+    });
+
+    if (!validationResult.success && validationResult.errors) {
+      console.error('[FirestoreClient] Experiment validation failed:', validationResult.errors);
+
+      // Log validation failure for CVRA analysis
+      await logValidationFailure(
+        experiment.labId,
+        experiment,
+        validationResult.errors
+      );
+
+      // Format errors for user
+      const errorMessages = formatValidationErrors(validationResult.errors);
+      throw new Error(`Validation failed: ${errorMessages.join(', ')}`);
+    }
+
+    console.log('[FirestoreClient] Experiment validation passed');
+
     const db = getFirestoreInstance();
     const docRef = await addDoc(collection(db, 'experiments'), {
       ...experiment,

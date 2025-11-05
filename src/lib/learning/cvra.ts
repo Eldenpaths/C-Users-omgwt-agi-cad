@@ -16,9 +16,9 @@
  * Phase 20: Autonomous canon updates (with safety)
  */
 
-import { db } from '@/lib/firebase';
+import { getDbInstance } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { getEmbedding, queryVectorDB } from '@/lib/embeddings/pinecone-client';
+import { generateEmbedding, findSimilar } from '@/lib/embeddings';
 import { logAgentAction } from '../logging/agent-tracer';
 
 // ============================================================
@@ -117,7 +117,7 @@ export async function calculateMetricStatistics(
   try {
     // Query all experiments for this lab from VAULT
     const vaultQuery = query(
-      collection(db, 'vault_entries'),
+      collection(getDbInstance(), 'vault_entries'),
       where('labId', '==', labId),
       orderBy('timestamp', 'desc'),
       limit(100) // Last 100 experiments
@@ -236,7 +236,7 @@ export async function findSimilarExperiments(
   try {
     // Get the experiment data to create embedding
     const experimentDoc = await getDocs(
-      query(collection(db, 'vault_entries'), where('id', '==', experimentId), limit(1))
+      query(collection(getDbInstance(), 'vault_entries'), where('id', '==', experimentId), limit(1))
     );
 
     if (experimentDoc.empty) {
@@ -256,10 +256,10 @@ export async function findSimilarExperiments(
     });
 
     // Get embedding from OpenAI
-    const embedding = await getEmbedding(experimentText);
+    const embedding = await generateEmbedding(experimentText);
 
     // Query Pinecone for similar experiments
-    const matches = await queryVectorDB(embedding, topK + 1, {
+    const matches = await findSimilar(embedding, topK + 1, {
       labId, // Filter by same lab
     });
 
@@ -410,7 +410,7 @@ export async function proposeCanonDeviation(
  */
 export async function saveCanonDeviation(deviation: CanonDeviation): Promise<string> {
   try {
-    const docRef = await addDoc(collection(db, 'cvra-suggestions'), {
+    const docRef = await addDoc(collection(getDbInstance(), 'cvra-suggestions'), {
       ...deviation,
       createdAt: deviation.createdAt.toISOString(),
       reviewedAt: deviation.reviewedAt?.toISOString(),
@@ -540,7 +540,7 @@ export async function analyzExperiment(
 export async function getPendingDeviations(): Promise<CanonDeviation[]> {
   try {
     const q = query(
-      collection(db, 'cvra-suggestions'),
+      collection(getDbInstance(), 'cvra-suggestions'),
       where('status', '==', 'pending'),
       orderBy('confidence', 'desc'),
       limit(50)

@@ -4,7 +4,7 @@
 // Status: Production - Hybrid Safe Mode Active
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Server as WebSocketServer, WebSocket } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 import { initAdmin } from "@/lib/firebaseAdmin";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";

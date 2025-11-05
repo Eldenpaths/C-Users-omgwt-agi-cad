@@ -1,15 +1,26 @@
 import { Firestore } from 'firebase/firestore';
-import { getFirebase } from './client';
+import {
+  getFirebase,
+  getDbInstance,
+  getAuthInstance,
+  signInWithGoogle,
+  db,
+  auth,
+} from './client';
 
 export function getFirestoreInstance(): Firestore {
-  const { db } = getFirebase();
-
-  if (!db) {
-    throw new Error('Firestore not initialized - must be called from client side');
-  }
-
-  return db;
+  return getDbInstance();
 }
 
-// Re-export everything from client for convenience
-export * from './client';
+// Re-export all client functions explicitly
+export {
+  getFirebase,
+  getDbInstance,
+  getAuthInstance,
+  signInWithGoogle,
+  db,
+  auth,
+};
+
+// Alias for convenience
+export { getFirestoreInstance as getDb };

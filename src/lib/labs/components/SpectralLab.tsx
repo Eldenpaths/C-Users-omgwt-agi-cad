@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { auth } from '@/lib/firebase';
 import { Sparkles } from 'lucide-react';
 
 export default function SpectralLab() {
   const [wavelength, setWavelength] = useState(550);
   const [intensity, setIntensity] = useState(50);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   const getColorFromWavelength = (wl: number) => {
     if (wl < 450) return 'from-purple-500 to-indigo-500';
@@ -37,7 +40,7 @@ export default function SpectralLab() {
       </div>
 
       {/* Controls */}
-      <div className="space-y-4">
+      <div className="space-y-4 relative z-10">
         <div>
           <label className="text-amber-300 text-sm mb-2 block">Wavelength (nm)</label>
           <input
@@ -66,6 +69,54 @@ export default function SpectralLab() {
         >
           <Sparkles className="w-4 h-4" /> RESET
         </button>
+
+        <div className="pt-2 border-t border-amber-500/20" />
+        <button
+          onClick={async () => {
+            const user = auth?.currentUser;
+            if (!user) {
+              setSaveMsg('Please sign in to save sessions.');
+              return;
+            }
+            setSaving(true);
+            setSaveMsg(null);
+            try {
+              const payload = {
+                labType: 'spectral',
+                userId: user.uid,
+                data: {
+                  experimentId: `spectral-${Date.now()}`,
+                  wavelengthsNm: [wavelength],
+                  intensities: [intensity],
+                  method: 'UV-Vis',
+                  runtimeMs: 500,
+                  success: intensity > 10,
+                  errorMessage: undefined,
+                  notes: 'Logged from SpectralLab UI',
+                },
+              };
+              const res = await fetch('/api/learning/ingest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
+              const json = await res.json();
+              if (!res.ok) throw new Error(json?.error || 'Failed to ingest');
+              setSaveMsg(`Saved session ${json.sessionId}`);
+            } catch (e: any) {
+              setSaveMsg(`Save failed: ${e.message}`);
+            } finally {
+              setSaving(false);
+            }
+          }}
+          disabled={saving}
+          className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-900/40 text-emerald-50 rounded font-semibold transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save Learning Session'}
+        </button>
+        {saveMsg ? (
+          <p className="text-amber-300 text-sm">{saveMsg}</p>
+        ) : null}
       </div>
     </div>
   );

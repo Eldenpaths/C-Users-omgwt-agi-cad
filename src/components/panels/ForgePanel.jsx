@@ -2,7 +2,7 @@
 "use client";
 import { useMemo } from "react";
 import { useFirestoreDoc } from "../../hooks/useFirestoreDoc.js";
-import { auth } from "../../lib/firebase.js";
+import { auth } from '../../lib/firebase-legacy.js';
 
 export default function ForgePanel() {
   const uid = auth.currentUser?.uid;

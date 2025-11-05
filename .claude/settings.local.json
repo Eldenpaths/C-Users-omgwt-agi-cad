@@ -1,16 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm add:*)",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nPhase 18C: AGI scaffolding with LangChain.js + Pinecone\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(rm:*)",
-      "Bash(vercel env add:*)",
-      "Bash(git push)",
-      "Bash(git push:*)",
-      "Bash(mkdir:*)",
-      "Bash(npx tsc:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nPhase 18D: Complete AGI-CAD Experience Build\n\nAUTONOMOUS SESSION COMPLETE - 6.5 Hours of Development\n\n## Major Features Added:\n\n### 1. Miss Avak AI Agent System\n- Interactive AI guide with contextual personality\n- Floating avatar with golden mystical theme\n- Expandable dialog with conversation history\n- 50+ contextual greetings and responses\n- Quick action buttons for common tasks\n\n### 2. Build Canon Sidebar\n- Complete decision tracking system\n- Four-state workflow (Exploring → Pinned → Locked → Deviated)\n- Search, filter, and export capabilities\n- Pre-populated with 10 system canon entries\n- Visual status indicators\n\n### 3. Enhanced AGI Features\n- Agent Status Panel with real-time monitoring\n- Smart Suggestions powered by Pinecone integration\n- Pattern detection and recommendations\n- Feedback collection system\n\n### 4. Comprehensive Documentation\n- USER_GUIDE.md (600+ lines)\n- README.md (500+ lines completely rewritten)\n- ARCHITECTURE.md (500+ lines deep-dive)\n- PHASE_18D_COMPLETE.md (session summary)\n\n## Technical Improvements:\n- Fixed TypeScript errors in agent-orchestrator\n- Integrated all components into SOS page\n- Added Smart Suggestions to VAULT sidebar\n- Modular component architecture\n- Production-ready code quality\n\n## Statistics:\n- 11 new files created\n- 2 files modified\n- ~4,240 lines of code\n- ~1,600 lines of documentation\n- 5 new React components\n- 2 new library modules\n\n## Components Created:\n- src/components/sos/MissAvak/Avatar.tsx\n- src/components/sos/MissAvak/Dialog.tsx\n- src/components/sos/AgentStatus.tsx\n- src/components/sos/CanonSidebar.tsx\n- src/components/sos/SmartSuggestions.tsx\n- src/lib/agents/miss-avak/personality.ts\n- src/lib/canon/canon-tracker.ts\n\n## Documentation:\n- src/docs/USER_GUIDE.md\n- src/docs/ARCHITECTURE.md\n- README.md (updated)\n- PHASE_18D_COMPLETE.md\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(pnpm build:*)",
+      "Bash(xargs sed -i \"s|from [''''\"\"]\\(.*\\)/firebase\\.js[''''\"\"]|from ''''\\1/firebase-legacy.js''''|g\")",
+      "Bash(test:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(code --list-extensions:*)",
+      "Bash(Select-String -Pattern \"github\")"
     ],
     "deny": [],
     "ask": []

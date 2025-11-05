@@ -11,7 +11,7 @@
  * - Build historical context for pattern matching
  */
 
-import { db } from '@/lib/firebase';
+import { getDbInstance } from '@/lib/firebase';
 import { collection, addDoc, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
 /**
@@ -40,6 +40,7 @@ export interface AgentTrace {
 
   // Metadata
   metadata?: {
+    agentName?: string;      // Human-readable agent name
     labId?: string;          // Which lab generated this
     experimentId?: string;   // Related experiment
     userId?: string;         // User who triggered this
@@ -63,7 +64,7 @@ export interface QuickTrace {
  */
 export async function logAgentAction(trace: AgentTrace): Promise<string> {
   try {
-    const docRef = await addDoc(collection(db, 'agent-traces'), {
+    const docRef = await addDoc(collection(getDbInstance(), 'agent-traces'), {
       ...trace,
       timestamp: trace.timestamp.toISOString(),
       createdAt: new Date().toISOString(),
@@ -163,7 +164,7 @@ export async function getTracesByAgent(
 ): Promise<AgentTrace[]> {
   try {
     const q = query(
-      collection(db, 'agent-traces'),
+      collection(getDbInstance(), 'agent-traces'),
       where('agentId', '==', agentId),
       orderBy('timestamp', 'desc'),
       limit(limitCount)
@@ -189,7 +190,7 @@ export async function getTracesByAction(
 ): Promise<AgentTrace[]> {
   try {
     const q = query(
-      collection(db, 'agent-traces'),
+      collection(getDbInstance(), 'agent-traces'),
       where('action', '==', action),
       orderBy('timestamp', 'desc'),
       limit(limitCount)
@@ -212,7 +213,7 @@ export async function getTracesByAction(
 export async function getFailedTraces(limitCount: number = 50): Promise<AgentTrace[]> {
   try {
     const q = query(
-      collection(db, 'agent-traces'),
+      collection(getDbInstance(), 'agent-traces'),
       where('errors', '!=', []),
       orderBy('timestamp', 'desc'),
       limit(limitCount)
