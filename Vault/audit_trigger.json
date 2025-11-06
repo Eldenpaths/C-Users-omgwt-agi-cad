@@ -1,0 +1,6 @@
+{
+  "task": "Run weekly Claude audit",
+  "target": "AGI-CAD-Core/vault/",
+  "last_run": "2025-11-01"
+}
+

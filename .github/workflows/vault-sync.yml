@@ -1,0 +1,85 @@
+name: Vault Daily Sync
+
+on:
+  schedule:
+    - cron: '17 9 * * *' # daily at 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set Git identity
+        run: |
+          git config user.name "agi-cad-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+      - name: Make sync script executable
+        run: |
+          chmod +x vault/sync.sh || true
+
+      - name: Run vault sync script
+        run: |
+          ./vault/sync.sh
+
+      - name: Push changes (if any)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "vault: automated daily sync"
+            git push
+          else
+            echo "No changes to push"
+          fi
+
+      - name: Check weekly audit staleness
+        id: audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          weekly_md="AGI-CAD-Core/vault/weekly_audit.md"
+          [ -f "$weekly_md" ] || weekly_md="vault/weekly_audit.md"
+          if [ ! -f "$weekly_md" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Use last commit time for file
+          last_epoch=$(git log -1 --format=%ct -- "$weekly_md" || echo 0)
+          now_epoch=$(date +%s)
+          days_since=$(( (now_epoch - last_epoch) / 86400 ))
+          echo "found=true" >> $GITHUB_OUTPUT
+          echo "days=$days_since" >> $GITHUB_OUTPUT
+
+      - name: Open audit due issue
+        if: steps.audit.outputs.found == 'true' && steps.audit.outputs.days >= 7
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Weekly Claude audit is due';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'audit'
+            });
+            if (issues.find(i => i.title === title)) {
+              core.info('Audit issue already open; skipping');
+              return;
+            }
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: 'The weekly audit markdown appears older than 7 days. Please run a deep-scan audit and update `weekly_audit.md`.\n\nFiles:\n- AGI-CAD-Core/vault/weekly_audit.md (preferred)\n- vault/weekly_audit.md (fallback)',
+              labels: ['audit']
+            });
+
