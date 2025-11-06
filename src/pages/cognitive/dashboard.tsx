@@ -22,6 +22,19 @@ function CognitiveDashboardContent() {
     if (!userId) return;
     setRunning(true);
     try {
+      // Prefer server-side analysis via API
+      const resp = await fetch('/api/cognitive/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, maxSessions: 300, threshold: 1.5 }),
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        setLastRun(`Analyzed ${json.analyzedCount}; created ${json.suggestionsCreated} suggestions.`);
+        setRunning(false);
+        return;
+      }
+      // Fallback to client-side agent
       const agent = new CVRAgent(1.5);
       const result = await agent.analyzeUser(userId, { maxSessions: 300 });
       setLastRun(`Analyzed ${result.analyzedCount}; created ${result.suggestionsCreated} suggestions.`);
@@ -164,4 +177,3 @@ export default function CognitiveDashboard() {
     </ErrorBoundary>
   );
 }
-

@@ -9,7 +9,9 @@
       "Bash(cat:*)",
       "Bash(echo:*)",
       "Bash(code --list-extensions:*)",
-      "Bash(Select-String -Pattern \"github\")"
+      "Bash(Select-String -Pattern \"github\")",
+      "Bash(npm install:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
