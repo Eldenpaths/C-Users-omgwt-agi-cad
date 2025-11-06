@@ -1,0 +1,18 @@
+[
+  {
+    "ts": "{{NOW}}",
+    "actor": "codex",
+    "action": "init",
+    "scope": "AGI-CAD-Core/vault",
+    "details": {
+      "created": [
+        "balance.yaml",
+        "project_plan.md",
+        "grok_feedback.md",
+        "weekly_audit.md",
+        "sync_log.json"
+      ]
+    }
+  }
+]
+

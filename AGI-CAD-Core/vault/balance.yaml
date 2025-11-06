@@ -1,0 +1,79 @@
+﻿# Multi-AI Task Router for AGI-CAD Core
+
+models:
+  gpt4:
+    role: Builder & Renderer
+    cost_per_1m_tokens: 5  # $5 input, $15 output
+    strengths:
+      - Code generation (React, TypeScript, shaders)
+      - UI/UX rendering and mockups
+      - Documentation writing
+      - File refactoring
+    trigger_keywords:
+      - build
+      - render
+      - generate
+      - refactor
+      - document
+      - create component
+    extension: chatgpt-vscode
+    max_context: 128k
+
+  claude:
+    role: Deep Reasoner & Safety Auditor
+    cost_per_1m_tokens: 3  # Sonnet 4.5
+    strengths:
+      - Long-context analysis (200k+ tokens)
+      - Architectural audits
+      - Security reviews
+      - Complex logic verification
+      - Memory/vault reconciliation
+    trigger_schedule: weekly  # Only run once per week
+    trigger_keywords:
+      - audit
+      - verify
+      - analyze architecture
+      - security review
+      - deep scan
+    context_files:
+      - vault/project_plan.md
+      - vault/grok_feedback.md
+      - docs/AGI-CAD-Master-Intellectual-Index.md
+    output_file: vault/weekly_audit.md
+
+  gemini:
+    role: Data Scientist & Predictor
+    cost_per_1m_tokens: 0.35  # Gemini Pro
+    strengths:
+      - Numerical analysis
+      - Pattern detection
+      - Predictive modeling
+      - Dataset clustering (Phase 18D)
+    trigger_keywords:
+      - analyze data
+      - predict
+      - forecast
+      - cluster
+      - anomaly detection
+    api: vertex-ai
+    output_dir: data/analytics/
+
+  grok:
+    role: Trend Scout & Context Sentinel
+    cost_per_1m_tokens: free  # xAI (for now)
+    strengths:
+      - Real-time web/X search
+      - GPT Store reconnaissance
+      - Model/API updates tracking
+    trigger_schedule: monthly
+    trigger_keywords:
+      - search web
+      - find similar
+      - what's new
+      - trending
+
+routing_rules:
+  default: gpt4
+  heavy_context: claude  # Only if >100k tokens needed
+  data_pipeline: gemini
+  research: grok
