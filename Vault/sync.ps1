@@ -51,4 +51,18 @@ if ($lastAuditItem) {
 
 Pop-Location
 
+# 5) Optional Gemini / Data Layer integration
+if ($Env:ENABLE_GEMINI_SYNC -eq "1") {
+    Write-Host "🧠 Triggering Gemini data job (ENABLE_GEMINI_SYNC=1)"
+    node "$repoRoot/vault/gemini_trigger.js" 2>&1 | Write-Host
+}
+
+# 6) Optional automated push
+if ($Env:ENABLE_VAULT_PUSH -eq "1") {
+    Write-Host "📤 Pushing changes to origin/main (ENABLE_VAULT_PUSH=1)"
+    Push-Location $repoRoot
+    git push origin main
+    Pop-Location
+}
+
 Write-Host "✨ Sync complete"

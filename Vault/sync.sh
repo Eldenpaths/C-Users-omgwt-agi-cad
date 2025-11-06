@@ -69,3 +69,15 @@ else
 fi
 
 echo "✨ Sync complete"
+
+# 5) Optional Gemini / Data Layer integration
+if [ "${ENABLE_GEMINI_SYNC:-}" = "1" ]; then
+  echo "🧠 Triggering Gemini data job (ENABLE_GEMINI_SYNC=1)"
+  node "$repo_root/vault/gemini_trigger.js" || true
+fi
+
+# 6) Optional automated push
+if [ "${ENABLE_VAULT_PUSH:-}" = "1" ]; then
+  echo "📤 Pushing changes to origin/main (ENABLE_VAULT_PUSH=1)"
+  git -C "$repo_root" push origin main || true
+fi
