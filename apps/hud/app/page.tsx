@@ -1,5 +1,5 @@
 'use client'
-import DriftMapCanvas from '@/components/DriftMapCanvas'
+import DriftMapCanvas from '../components/DriftMapCanvas'
 
 export default function HUDPage() {
   return (
@@ -10,4 +10,5 @@ export default function HUDPage() {
     </main>
   )
 }
+
 

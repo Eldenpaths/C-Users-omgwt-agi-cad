@@ -9,6 +9,7 @@ import FusionPanel from '../../components/panels/FusionPanel';
 import VaultPanel from '../../components/panels/VaultPanel';
 import ForgePanel from '../../components/panels/ForgePanel';
 import { initializeVault } from '@/lib/vault';
+import DriftMapCanvas from '@/components/DriftMapCanvas';
 import { initializeFusionBridge } from '@/lib/meta/fusion-bridge';
 
 export default function DashboardPage() {
@@ -40,8 +41,11 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Fusion Telemetry */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
               <FusionPanel />
+              <div className="relative rounded-lg overflow-hidden border border-amber-500/20" style={{ height: 360 }}>
+                <DriftMapCanvas />
+              </div>
             </div>
 
             {/* Right Column: Vault & Forge */}

@@ -1,0 +1,14 @@
+Title: Fractal-Symbolic QMIX (FS-QMIX)
+Inventors: [Your Name et al.]
+Filed: [pending]
+
+Abstract:
+A multi-agent reinforcement-learning system combining fractal-dimension variance (D_var)
+and symbolic lacunarity regularization (SLR) to weight agent contributions and stabilize
+emergent coordination.
+
+Claims:
+1. A value-decomposition algorithm using fractal metrics to modulate agent reward shares.
+2. Application of symbolic regularizers to maintain interpretable emergent behavior.
+3. Deployment in decentralized trading and AI-coordination environments.
+

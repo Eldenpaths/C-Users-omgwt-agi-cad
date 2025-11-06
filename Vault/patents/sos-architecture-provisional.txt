@@ -1,0 +1,12 @@
+Title: Symbolic Operating System (SOS)
+Inventors: [Your Name et al.]
+
+Abstract:
+An AI-governance architecture dividing cognitive state into Forge (working memory),
+Vault (immutable record), and Canon (constitutional rules) with automatic reconciliation.
+
+Claims:
+1. Immutable recordkeeping (Vault) for AI reasoning steps.
+2. Canon-based self-audit preventing drift.
+3. Multi-agent coordination through constitutional memory layers.
+
