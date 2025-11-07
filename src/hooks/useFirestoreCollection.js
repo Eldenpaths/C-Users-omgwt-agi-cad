@@ -36,7 +36,9 @@ export function useFirestoreCollection({
       unsubRef.current = null;
     }
 
-    const q = query(collection(db, path), orderBy(orderByField, direction));
+    // Normalize path for modular API: supply segments instead of a single even-segment string
+    const segs = Array.isArray(path) ? path : String(path).split('/').filter(Boolean);
+    const q = query(collection(db, ...segs), orderBy(orderByField, direction));
     unsubRef.current = onSnapshot(
       q,
       (snap) => {
@@ -62,7 +64,8 @@ export function useFirestoreCollection({
     try {
       incPending();
       const batch = writeBatch(db);
-      const itemsCol = collection(db, path);
+      const segs = Array.isArray(path) ? path : String(path).split('/').filter(Boolean);
+      const itemsCol = collection(db, ...segs);
       const newDocRef = doc(itemsCol);
 
       batch.set(newDocRef, {
@@ -72,9 +75,9 @@ export function useFirestoreCollection({
         _updatedAt: serverTimestamp()
       });
 
-      if (path.endsWith("/vault/items")) {
-        const metaPath = path.slice(0, -"/items".length) + "/_meta";
-        batch.set(doc(db, metaPath), { count: increment(1) }, { merge: true });
+      if (String(path).endsWith("/vault/items")) {
+        const metaSegs = (String(path).slice(0, -"/items".length) + "/_meta").split('/').filter(Boolean);
+        batch.set(doc(db, ...metaSegs), { count: increment(1) }, { merge: true });
       }
 
       await batch.commit();
@@ -88,7 +91,8 @@ export function useFirestoreCollection({
   async function updateOne(id, patch) {
     try {
       incPending();
-      await updateDoc(doc(db, path, id), {
+      const segs = Array.isArray(path) ? path : String(path).split('/').filter(Boolean);
+      await updateDoc(doc(db, ...segs, id), {
         ...patch,
         _source: sourceTag,
         _updatedAt: serverTimestamp()
@@ -103,7 +107,8 @@ export function useFirestoreCollection({
   async function removeOne(id) {
     try {
       incPending();
-      await deleteDoc(doc(db, path, id));
+      const segs = Array.isArray(path) ? path : String(path).split('/').filter(Boolean);
+      await deleteDoc(doc(db, ...segs, id));
       decPending();
     } catch (e) {
       setError(e);

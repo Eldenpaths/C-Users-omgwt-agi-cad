@@ -6,7 +6,8 @@ import { auth } from '../../lib/firebase-legacy.js';
 
 export default function VaultPanel() {
   const uid = auth.currentUser?.uid;
-  const basePath = useMemo(() => (uid ? `users/${uid}/vault/items` : null), [uid]);
+  // Use a valid nested collection path (collection/doc/collection): users/{uid}/vault/default/items
+  const basePath = useMemo(() => (uid ? `users/${uid}/vault/default/items` : null), [uid]);
   const { items, loading, error, addOne, updateOne, removeOne } =
     useFirestoreCollection({ path: basePath ?? "noop/blocked", orderByField: "_updatedAt", direction: "desc" });
 
@@ -49,9 +50,8 @@ export default function VaultPanel() {
       </ul>
 
       <div className="text-xs text-neutral-500">
-        Path: <code>users/{uid}/vault/items</code>
+        Path: <code>users/{uid}/vault/default/items</code>
       </div>
     </div>
   );
 }
-

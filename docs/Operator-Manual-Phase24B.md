@@ -1,38 +1,68 @@
-# Operator Manual � Phase 24B (Router Autonomy Expansion)
+# Operator Manual — Phase 24B: Router Autonomy Expansion
 
-This phase adds online learning for the Intelligence Router: Each routed task updates agent success and latency metrics. A HUD panel surfaces live weights.
+## Scope
+Adds adaptive learning weights (EMA + UCB1), route telemetry, and a live HUD to the Intelligence Router.
 
-## Components
+## Files
+- `src/lib/routerWeights.ts` — adaptive selection + feedback APIs
+- `src/app/api/route/route.ts` — API ingress (POST route, PUT outcome, GET SSE stream)
+- `src/components/RouterPanel.tsx` — live HUD (drop into any page)
+- (existing) `IntelligenceRouter.ts` — orchestrator; call its entry inside the POST handler if desired
 
-- Router Weights Core: src/core/router/routerWeights.ts
-  - RouterWeight interface: { agentId, successRate, avgLatency, updatedAt }
-  - loadWeights() ? returns current map (stored in AGI-CAD-Core/vault/routerWeights.json or ault/routerWeights.json)
-  - updateWeights(agentId, success, latency) ? EMA update and persist
+## How It Works
+1. Choosing an Agent
+   - `chooseAgent(task)` computes a utility per agent (EMA success & latency, difficulty-aware), then applies UCB1 exploration to avoid local optima.
+   - Returns the selected agent ID, increments its `calls`, and updates versioned state.
 
-- Router Integration: src/core/router/IntelligenceRouter.ts
-  - After each routeTask execution, calls updateWeights() with success flag and measured latency
-  - Heuristic mode still supported when gent is omitted (infers from goal/context)
+2. Recording Outcomes
+   - After the agent runs, call `PUT /api/route` with `{ outcome }`.
+   - `recordOutcome()` updates EMAs, success counters, and appends to a telemetry ring buffer.
 
-- API Endpoint: POST /api/router/route
-  - Body: { goal, context }
-  - Response: { ok, result, weights } (weights are current map)
-  - Also supports GET to fetch just { weights }
+3. Live Telemetry
+   - `GET /api/route?stream=1` serves Server-Sent Events snapshots ~ every 1.5s.
+   - `RouterPanel.tsx` subscribes and renders weights, scores, and recent routes.
 
-- HUD Panel: pps/hud/components/RouterPanel.tsx
-  - Polls /api/router/route (GET) every 10s
-  - Renders table of gentId, successRate, vgLatency, and updatedAt
+## Minimal Usage
+Route a task:
+```
+curl -X POST /api/route -H "content-type: application/json" -d '{
+  "task": { "id":"t1","kind":"summarize","difficulty":0.6 }
+}'
+```
 
-## Commands
+Record the outcome:
+```
+curl -X PUT /api/route -H "content-type: application/json" -d '{
+  "outcome": { "taskId":"t1","agent":"EchoArchivist","success":true,"latencyMs":920 }
+}'
+```
 
-- Dev server: pnpm dev
-- Smoke agents: pnpm smoke
-- Router test: pnpm run test:router
+Embed HUD:
+```
+// e.g., src/app/dashboard/page.tsx
+import RouterPanel from '@/components/RouterPanel';
 
-## Recovery
-- If outerWeights.json is missing or unreadable, defaults are used and a new file is created in Vault.
-- If /api/router/route fails, the HUD panel falls back silently and retries in 10s.
+export default function Page() {
+  return (
+    <main className="p-6">
+      <RouterPanel />
+    </main>
+  );
+}
+```
 
-## Next (24C)
-- Weight-aware routing decisions (use successRate and vgLatency to bias agent selection)
-- Metrics SSE channel for instantaneous HUD updates
-- Vault composite indexes and historical rollups for router performance
+## Tuning
+- `EMA_ALPHA_SUCCESS` (0.20): raise to adapt faster to changing agent quality.
+- `EMA_ALPHA_LATENCY` (0.10): raise for more reactive latency tracking.
+- `EXPLORATION_C` (1.25): higher = more exploration; lower = greedier on current best.
+- `MIN_CALLS_FOR_CONF` (5): flat exploration boost until enough trials accrue.
+
+## Integration Points
+- IntelligenceRouter: after POST selection, you can forward to your existing orchestrator (Claude/Gemini/GPT dispatch). On completion, have the orchestrator PUT `/api/route` with the measured outcome.
+- Persistence: current state is in-memory (hot-reload safe). To persist, mirror `getSnapshot()`, `recordOutcome()`, and `chooseAgent()` via Firestore/Redis.
+
+## Ops Checklists
+- Smoke: POST a few tasks, PUT mixed outcomes, confirm HUD updates.
+- Regression: verify UCB score ordering changes as outcomes accumulate.
+- Load: SSE stream remains responsive under moderate outcome rates.
+

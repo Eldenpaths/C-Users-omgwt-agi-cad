@@ -3,6 +3,7 @@ import { FractalwrightAgent } from '@/agents/fractalwright'
 import { MathwrightAgent } from '@/agents/mathwright'
 import { SimwrightAgent } from '@/agents/simwright'
 import { updateWeights } from './routerWeights'
+import { recordOutcome } from '@/lib/routerWeights'
 
 export type RouteKind = 'echo' | 'fractal' | 'math' | 'sim'
 
@@ -51,6 +52,9 @@ export class IntelligenceRouter {
     if (!agent) throw new Error(`Unknown agent: ${rt.agent}`)
 
     const start = Date.now()
+    const taskId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? (crypto as any).randomUUID()
+      : `rt_${start}_${Math.floor(Math.random()*1e6)}`
     try {
       let result: any
       switch (rt.agent) {
@@ -67,10 +71,16 @@ export class IntelligenceRouter {
       }
       const latency = Date.now() - start
       updateWeights(rt.agent, true, latency)
+      try {
+        recordOutcome({ taskId, agent: rt.agent.toString() as any, success: true, latencyMs: latency, at: Date.now() })
+      } catch {}
       return result
     } catch (e) {
       const latency = Date.now() - start
       updateWeights(rt.agent, false, latency)
+      try {
+        recordOutcome({ taskId, agent: rt.agent.toString() as any, success: false, latencyMs: latency, at: Date.now() })
+      } catch {}
       throw e
     }
   }
