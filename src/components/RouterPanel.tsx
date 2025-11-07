@@ -3,6 +3,13 @@
 
 import React from 'react'
 import type { AgentId } from '@/lib/routerWeights'
+import { getAuthInstance } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { getDbInstance } from '@/lib/firebase'
+import { doc, getDoc } from 'firebase/firestore'
+import ProfileTrend from '@/components/ProfileTrend'
+import { setAdaptive } from '@/lib/routerProfiles/profileStore'
+import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
 
 type AgentStats = {
   agent: AgentId
@@ -36,6 +43,11 @@ export default function RouterPanel() {
   const [paused, setPaused] = React.useState<boolean>(false)
   const [diff, setDiff] = React.useState<any | null>(null)
   const [adminOffline, setAdminOffline] = React.useState<boolean>(false)
+  const [operatorUid, setOperatorUid] = React.useState<string | null>(null)
+  const [avgReward, setAvgReward] = React.useState<number | null>(null)
+  const [profileUpdatedAt, setProfileUpdatedAt] = React.useState<number | null>(null)
+  const [rewards, setRewards] = React.useState<RewardRecord[]>([])
+  const [adaptive, setAdaptiveFlag] = React.useState<boolean>(true)
 
   React.useEffect(() => {
     const es = new EventSource('/api/route?stream=1')
@@ -47,6 +59,32 @@ export default function RouterPanel() {
     }
     es.addEventListener('snapshot', handler as EventListener)
     return () => es.close()
+  }, [])
+
+  // Observe auth and pull operator profile summary
+  React.useEffect(() => {
+    const auth = getAuthInstance()
+    if (!auth) return
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (u?.uid) {
+        setOperatorUid(u.uid)
+        try {
+          const db = getDbInstance()
+          const ref = doc(db, 'profiles', u.uid, 'router', 'default')
+          const snap = await getDoc(ref)
+          if (snap.exists()) {
+            const d: any = snap.data()
+            setAvgReward(Number(d?.meta?.avgReward ?? 0))
+            setProfileUpdatedAt(Number(d?.meta?.lastUpdated ?? 0))
+            setRewards(Array.isArray(d?.rewards) ? d.rewards : [])
+            setAdaptiveFlag(d?.meta?.adaptive ?? true)
+          }
+        } catch {}
+      } else {
+        setOperatorUid(null)
+      }
+    })
+    return () => unsub()
   }, [])
 
   React.useEffect(() => {
@@ -184,8 +222,43 @@ export default function RouterPanel() {
         {adminOffline && (
           <div className="mt-2 text-amber-500 italic">Admin unavailable · using client snapshot only</div>
         )}
+        {operatorUid && (
+          <div className="mt-2 text-gray-500">
+            Operator: <span className="font-medium">{operatorUid}</span>
+            {typeof avgReward === 'number' && (
+              <>
+                {' '}· Avg Reward {avgReward.toFixed(3)}
+              </>
+            )}
+            {profileUpdatedAt && (
+              <>
+                {' '}· Profile Saved {new Date(profileUpdatedAt).toLocaleTimeString()}
+              </>
+            )}
+          </div>
+        )}
+        {operatorUid && rewards.length > 0 && (
+          <div className="mt-2">
+            <ProfileTrend rewards={rewards.slice(-50)} />
+          </div>
+        )}
+        {operatorUid && (
+          <div className="mt-3 flex items-center gap-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={adaptive}
+                onChange={async (e) => {
+                  const next = e.target.checked
+                  setAdaptiveFlag(next)
+                  try { await setAdaptive(operatorUid, next) } catch {}
+                }}
+              />
+              <span className="text-xs">Adaptive Mode ON</span>
+            </label>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-

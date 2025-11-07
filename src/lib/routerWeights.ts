@@ -90,7 +90,7 @@ function now() {
 }
 
 // lightweight difficulty-normalized score
-function expectedUtility(s: AgentStats, task?: RouteTask) {
+export function expectedUtility(s: AgentStats, task?: RouteTask) {
   const diff = clamp01(task?.difficulty ?? 0.5)
   const succ = s.emaSuccess
   const speed = 1 / Math.max(200, s.emaLatency) // lower latency => higher speed

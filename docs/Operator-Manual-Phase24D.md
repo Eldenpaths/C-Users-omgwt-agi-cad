@@ -136,3 +136,6 @@ profiles/{uid}/router/default
 
 Run tests: pnpm run test:router25a
 
+### Phase 25B Preview: Profile Visualization & Adaptive Toggle
+- Router now displays per-operator reward trend (last 50 deltas) in the HUD footer.
+- Toggle "Adaptive Mode ON" to enable/disable reinforcement writes (stored at profiles/{uid}/router/default/meta.adaptive).
