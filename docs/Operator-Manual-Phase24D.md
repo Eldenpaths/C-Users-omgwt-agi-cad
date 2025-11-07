@@ -140,3 +140,7 @@ Run tests: pnpm run test:router25a
 - Router now displays per-operator reward trend (last 50 deltas) in the HUD footer.
 - Toggle "Adaptive Mode ON" to enable/disable reinforcement writes (stored at profiles/{uid}/router/default/meta.adaptive).
 - Run pnpm run test:router25b to simulate profile rewards.
+### Phase 25C Preview – Per-Agent Analytics & Rollups
+• View stacked sparklines per agent
+• Daily avgReward trend via rollup()
+• Run: pnpm run test:router25c

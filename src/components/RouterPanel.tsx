@@ -10,6 +10,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import ProfileTrend from '@/components/ProfileTrend'
 import { setAdaptive } from '@/lib/routerProfiles/profileStore'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
+import ProfileAgentTrends from '@/components/ProfileAgentTrends'
 
 type AgentStats = {
   agent: AgentId
@@ -241,6 +242,9 @@ export default function RouterPanel() {
           <div className="mt-2">
             <ProfileTrend rewards={rewards.slice(-50)} />
           </div>
+        )}
+        {operatorUid && rewards.length > 0 && (
+          <ProfileAgentTrends rewards={rewards} />
         )}
         {operatorUid && (
           <div className="mt-3 flex items-center gap-3">

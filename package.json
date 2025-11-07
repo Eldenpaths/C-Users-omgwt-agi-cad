@@ -15,6 +15,7 @@
                     "test:ai-nexus:providers":  "npx tsx scripts/test-ai-nexus.js providers",
                     "test:ai-nexus":  "npx tsx scripts/test-ai-nexus.js test",
                     "start":  "next start",
+                    "test:router25c":  "tsx scripts/test-router-25c.ts",
                     "test:phase10b":  "jest tests/phase10b",
                     "lint":  "next lint",
                     "test:coverage":  "jest --coverage",
