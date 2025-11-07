@@ -128,3 +128,11 @@ Verifies:
 - HUD auto‑tuning mode toggle
 
 
+
+### Phase 25 Preview
+Router now tracks per-operator profiles in Firestore:
+
+profiles/{uid}/router/default
+
+Run tests: pnpm run test:router25a
+
