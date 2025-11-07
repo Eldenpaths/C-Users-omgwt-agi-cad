@@ -144,3 +144,8 @@ Run tests: pnpm run test:router25a
 • View stacked sparklines per agent
 • Daily avgReward trend via rollup()
 • Run: pnpm run test:router25c
+### Phase 26 Preview – Reward Policy Engine
+• Policy modes: balanced, risk-seeking, conservative
+• Rolling-window ?avg auto-biases agent weights
+• Stored at profiles/{uid}/router/policy
+• Run: pnpm run test:router26a
