@@ -15,14 +15,15 @@
                     "test:ai-nexus:providers":  "npx tsx scripts/test-ai-nexus.js providers",
                     "test:ai-nexus":  "npx tsx scripts/test-ai-nexus.js test",
                     "start":  "next start",
-                    "test":  "jest",
                     "test:phase10b":  "jest tests/phase10b",
                     "lint":  "next lint",
                     "test:coverage":  "jest --coverage",
                     "dev":  "next dev",
-                    "build":  "next build",
+                    "test":  "jest",
                     "test:drift":  "jest experiments/adversarial-drift",
-                    "test:sim":  "tsx scripts/test-simwright.ts"
+                    "test:sim":  "tsx scripts/test-simwright.ts",
+                    "build":  "next build",
+                    "test:router25b":  "tsx scripts/test-router-25a.ts"
                 },
     "dependencies":  {
                          "@anthropic-ai/sdk":  "^0.67.0",
