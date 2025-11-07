@@ -38,6 +38,13 @@ export default function Home() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <Link href="/mission-control">
+            <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
+              <h2 className="text-2xl font-serif mb-3">Mission Control</h2>
+              <p className="text-amber-400">Dials, routing, drift, trading</p>
+            </div>
+          </Link>
+
           <Link href="/simulation/dashboard">
             <div className="forge-panel p-8 rounded-lg hover:forge-glow transition-all cursor-pointer">
               <h2 className="text-2xl font-serif mb-3">Simulation</h2>

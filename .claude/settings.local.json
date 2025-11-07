@@ -13,7 +13,10 @@
       "Bash(npm install:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nPhase 21: Launch Preparation Complete 🚀\n\n- Add landing page with mystical aesthetic (/launch)\n- Implement UI polish (micro-interactions, glow effects)\n- Update icons across app (Atom, Waves, Scroll, etc)\n- Add performance optimizations (React.memo, lazy loading)\n- Integrate Web Vitals tracking (CLS, INP, FCP, LCP, TTFB)\n- Add error logging to Firestore (centralized monitoring)\n- Add security headers via middleware (CSP, HSTS, XSS protection)\n- Create comprehensive deployment checklist\n- Add environment validation utility\n- Final polish (imports organized, alt texts added)\n- Add comprehensive documentation (LAUNCH_READY.md)\n\nNew Features:\n- Mystical landing page with animated particles and glow effects\n- Web Vitals tracking to Firestore for performance monitoring\n- Global error handler logging all errors to Firestore\n- Security middleware with CSP, HSTS, and XSS protection\n- Environment validation on startup\n\nNew Files:\n- src/app/launch/page.tsx - Landing page\n- src/lib/utils/webVitals.ts - Web Vitals tracking\n- src/lib/utils/errorLogger.ts - Error logging utility\n- src/middleware.ts - Security headers\n- DEPLOYMENT_CHECKLIST.md - Step-by-step deployment guide\n- LAUNCH_READY.md - Production readiness documentation\n\nModified Files:\n- tailwind.config.js - Added glow, float, shimmer animations\n- package.json - Added web-vitals dependency\n- src/pages/cognitive/dashboard.tsx - Added server-side API fallback\n\nStatus: LAUNCH READY ✅\nBuild: Passing (0 errors, 0 warnings)\nType Safety: 100% (0 any types)\nPerformance: Optimized (lazy load, memoization, Web Vitals tracking)\nSecurity: Headers + CSP + validation configured\nAccessibility: WCAG AA compliant (keyboard nav, alt texts)\nMonitoring: Error logging + Web Vitals → Firestore\n\nReady for production deployment to Vercel.\n\nPhases Complete: 1-21 (Full AGI-CAD Platform)\nEOF\n)\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git log:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(pnpm dev)"
     ],
     "deny": [],
     "ask": []

@@ -1,13 +1,11 @@
 'use client'
-import DriftMapCanvas from '../components/DriftMapCanvas'
+import MissionControl from '../components/MissionControl'
 
 export default function HUDPage() {
   return (
-    <main className="min-h-screen p-4 bg-black">
-      <section className="panel relative" style={{ height: '80vh' }}>
-        <DriftMapCanvas />
-      </section>
-    </main>
+    <div className="h-screen w-screen">
+      <MissionControl />
+    </div>
   )
 }
 
