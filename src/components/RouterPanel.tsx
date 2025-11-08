@@ -53,6 +53,7 @@ export default function RouterPanel() {
   const [rewards, setRewards] = React.useState<RewardRecord[]>([])
   const [adaptive, setAdaptiveFlag] = React.useState<boolean>(true)
   const [evolveMsg, setEvolveMsg] = React.useState<string | null>(null)
+  const [evolveList, setEvolveList] = React.useState<Array<{ agent: string; bias: number }> | null>(null)
 
   React.useEffect(() => {
     const es = new EventSource('/api/route?stream=1')
@@ -231,8 +232,10 @@ export default function RouterPanel() {
                 if (!res.ok || !json.ok) throw new Error(json.error || 'request failed')
                 const n = Array.isArray(json.updated) ? json.updated.length : 0
                 setEvolveMsg(`Evolution step complete · updated ${n} agents`)
+                setEvolveList(Array.isArray(json.updated) ? json.updated : null)
               } catch (e: any) {
                 setEvolveMsg(`Evolution failed: ${e?.message || 'error'}`)
+                setEvolveList(null)
               }
             }}>Evolve Now</button>
           </div>
@@ -269,6 +272,16 @@ export default function RouterPanel() {
         )}
         {evolveMsg && (
           <div className="mt-2 text-xs text-emerald-700">{evolveMsg}</div>
+        )}
+        {evolveList && evolveList.length > 0 && (
+          <div className="mt-2 text-xs text-emerald-700">
+            {evolveList.map((u) => (
+              <div key={u.agent} className="flex items-center justify-between">
+                <span className="font-mono">{u.agent}</span>
+                <span className="tabular-nums">bias {u.bias.toFixed(3)}</span>
+              </div>
+            ))}
+          </div>
         )}
         {operatorUid && rewards.length > 0 && (
           <ProfileAgentTrends rewards={rewards} />
