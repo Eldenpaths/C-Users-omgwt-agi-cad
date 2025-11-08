@@ -2,6 +2,7 @@
 import React from 'react';
 import { GlyphDocumentSchema } from '@/lib/glyphcore/schema';
 import { roundTripText } from '@/lib/glyphcore/compressor';
+import { visualCompressClient, isVisualCompressionEnabled } from '@/lib/glyphcore/visualHybrid';
 
 export default function GlyphCoreConsole() {
   const [input, setInput] = React.useState<string>(JSON.stringify({
@@ -9,6 +10,7 @@ export default function GlyphCoreConsole() {
     content: { mime: 'text/plain', encoding: 'utf8', data: 'E=mc^2' },
   }, null, 2));
   const [status, setStatus] = React.useState<string>('');
+  const [useVisual, setUseVisual] = React.useState<boolean>(false);
 
   async function handleValidate() {
     try {
@@ -24,8 +26,13 @@ export default function GlyphCoreConsole() {
     try {
       const parsed = JSON.parse(input);
       const text = parsed?.content?.data || '';
-      const r = await roundTripText(String(text));
-      setStatus(`Compressed ${r.sizeIn} → ${r.sizeOut} bytes; restored="${r.restored}"`);
+      if (useVisual && isVisualCompressionEnabled()) {
+        const bytes = await visualCompressClient(String(text));
+        setStatus(`Visual-compressed preview: ~${String(text).length} → ${bytes.length} bytes`);
+      } else {
+        const r = await roundTripText(String(text));
+        setStatus(`Compressed ${r.sizeIn} → ${r.sizeOut} bytes; restored="${r.restored}"`);
+      }
     } catch (e: any) {
       setStatus(`Compression error: ${e?.message || 'error'}`);
     }
@@ -47,6 +54,10 @@ export default function GlyphCoreConsole() {
       <div className="mb-2 text-amber-200 font-semibold">GlyphCore Console</div>
       <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} className="w-full rounded bg-black/40 border border-amber-500/20 p-2 font-mono text-sm text-amber-100" />
       <div className="mt-3 flex items-center gap-2">
+        <label className="flex items-center gap-2 text-xs text-amber-300/80 mr-4">
+          <input type="checkbox" checked={useVisual} onChange={(e)=>setUseVisual(e.target.checked)} />
+          <span>Use visual compression (env-gated)</span>
+        </label>
         <button onClick={handleValidate} className="px-3 py-1.5 rounded border border-amber-500/30 hover:bg-amber-500/10 text-amber-100 text-sm">Validate</button>
         <button onClick={handleCompress} className="px-3 py-1.5 rounded border border-amber-500/30 hover:bg-amber-500/10 text-amber-100 text-sm">Compress</button>
         <button onClick={handleSubmit} className="px-3 py-1.5 rounded border border-amber-500/30 hover:bg-amber-500/10 text-amber-100 text-sm">Submit</button>
@@ -55,4 +66,3 @@ export default function GlyphCoreConsole() {
     </div>
   );
 }
-
