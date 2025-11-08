@@ -454,8 +454,9 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
       <div className="absolute top-1 right-1 text-[10px] px-2 py-1 bg-black/50 border border-white/10 rounded space-y-0.5 text-white">
         <div>FPS: {Math.round((fps as any).current || 0)}</div>
         <div>Res: {size}Ãƒâ€šÃ‚Â²</div>
-        <div>WG/s: {Math.round((wgpsRef as any).current || 0)}</div>
+        <div>WG: D=${chosenWGRef.current.d}�${chosenWGRef.current.d} G=${chosenWGRef.current.g}�${chosenWGRef.current.g}\n        WG/s: {Math.round((wgpsRef as any).current || 0)}</div>
       </div>
     </div>
   )
 }
+
