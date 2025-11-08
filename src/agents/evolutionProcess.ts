@@ -26,7 +26,7 @@ export class EvolutionProcess {
    * Single evolutionary step. Computes a simple fitness for each agent and nudges bias.
    * Fitness = emaSuccess * 0.8 + (1/emaLatency) * 0.2 (normalized)
    */
-  async step(): Promise<{ updated: Array<{ agent: AgentId; bias: number }> }> {
+  async step(): Promise<{ updated: Array<{ agent: AgentId; bias: number; prevBias: number }> }> {
     const snap = getSnapshot();
     const agents = Object.values(snap.agents);
     if (agents.length === 0) return { updated: [] };
@@ -40,14 +40,14 @@ export class EvolutionProcess {
     const minF = Math.min(...fitness.map((f) => f.fit));
     const span = Math.max(1e-6, maxF - minF);
 
-    const updated: Array<{ agent: AgentId; bias: number }> = [];
+    const updated: Array<{ agent: AgentId; bias: number; prevBias: number }> = [];
     for (const f of fitness) {
       const score = (f.fit - minF) / span; // 0..1
       const delta = (score - 0.5) * 2 * this.cfg.biasStep; // -step..+step
       const current = snap.agents[f.id].bias ?? 0;
       const next = clamp(current + delta, -this.cfg.maxAbsBias, this.cfg.maxAbsBias);
       setAgentOverride(f.id as AgentId, { bias: next });
-      updated.push({ agent: f.id as AgentId, bias: next });
+      updated.push({ agent: f.id as AgentId, bias: next, prevBias: current });
     }
     return { updated };
   }
@@ -56,4 +56,3 @@ export class EvolutionProcess {
 function clamp(x: number, lo: number, hi: number): number { return Math.max(lo, Math.min(hi, x)); }
 
 export default EvolutionProcess;
-

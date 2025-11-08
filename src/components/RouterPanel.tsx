@@ -238,6 +238,24 @@ export default function RouterPanel() {
                 setEvolveList(null)
               }
             }}>Evolve Now</button>
+            <button className="ml-2 px-2 py-1 rounded border border-rose-500 text-rose-700 hover:bg-rose-50" onClick={async () => {
+              try {
+                const { getAuthInstance } = await import('@/lib/firebase')
+                const auth = getAuthInstance()
+                const u = auth?.currentUser
+                if (!u) { setEvolveMsg('Sign in required to revert'); return }
+                const token = await u.getIdToken()
+                const res = await fetch('/api/router/evolution/revert', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+                const json = await res.json()
+                if (!res.ok || !json.ok) throw new Error(json.error || 'request failed')
+                const n = Array.isArray(json.reverted) ? json.reverted.length : 0
+                setEvolveMsg(`Reverted last evolution · restored ${n} agents`)
+                setEvolveList(Array.isArray(json.reverted) ? json.reverted : null)
+              } catch (e: any) {
+                setEvolveMsg(`Revert failed: ${e?.message || 'error'}`)
+                setEvolveList(null)
+              }
+            }}>Revert Last</button>
           </div>
         </div>
         <div className="mt-2">

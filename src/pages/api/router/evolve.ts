@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyFirebaseToken } from '@/lib/security/auth';
 import { EvolutionProcess } from '@/agents/evolutionProcess';
+import { recordEvolutionStep } from '@/lib/router/evolutionHistory';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -16,9 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const process = new EvolutionProcess();
     const result = await process.step();
+    recordEvolutionStep(result.updated);
     return res.status(200).json({ ok: true, updated: result.updated });
   } catch (e: any) {
     return res.status(500).json({ ok: false, error: e?.message || 'evolve failed' });
   }
 }
-
