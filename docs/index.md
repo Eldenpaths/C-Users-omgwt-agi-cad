@@ -7,3 +7,4 @@
 
 Open each manual directly in your IDE or browser to view commands, endpoints, and workflows.
 
+- [Phase 27E Checkpoint — TypeSafe LearningCore + HUD Stability](./checkpoints/phase27E.md)
