@@ -40,6 +40,8 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
   const [minRange, setMinRange] = React.useState(0)
   const [maxRange, setMaxRange] = React.useState(1)
   const [resolution, setResolution] = React.useState<256 | 512 | 1024>(512)
+  const [vectorCells, setVectorCells] = React.useState<8 | 16 | 32>(16)
+  const [vectorScale, setVectorScale] = React.useState<number>(1.0)
   const [customStart, setCustomStart] = React.useState('#0a34cc')
   const [customEnd, setCustomEnd] = React.useState('#e21d19')
   const [customStops, setCustomStops] = React.useState<Array<{ pos: number; color: string }>>([
@@ -70,6 +72,8 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
         if (typeof ui.showField === 'boolean') setShowField(ui.showField)
         if (typeof ui.showEditor === 'boolean') setShowEditor(ui.showEditor)
         if (ui.resolution === 256 || ui.resolution === 512 || ui.resolution === 1024) setResolution(ui.resolution)
+        if (ui.vectorCells === 8 || ui.vectorCells === 16 || ui.vectorCells === 32) setVectorCells(ui.vectorCells)
+        if (typeof ui.vectorScale === 'number') setVectorScale(ui.vectorScale)
         if (typeof ui.useWebGpuRender === 'boolean') setUseWebGpuRender(ui.useWebGpuRender)
       }
       const raw = localStorage.getItem('neuro-heatmap-custom')
@@ -97,10 +101,10 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
   React.useEffect(() => {
     try {
       localStorage.setItem('neuro-heatmap-ui', JSON.stringify({
-        metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender, resolution,
+        metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender, resolution, vectorCells, vectorScale,
       }))
     } catch {}
-  }, [metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender, resolution])
+  }, [metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender, resolution, vectorCells, vectorScale])
 
   React.useEffect(() => {
     const ws = connectMetricsSocket((msg: MetricsMessage) => {
@@ -139,6 +143,18 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
             <option value={512}>512</option>
             <option value={1024}>1024</option>
           </select>
+          <span className="text-zinc-400">Vector Cells:</span>
+          <select className="bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5"
+                  value={vectorCells}
+                  onChange={(e) => setVectorCells(parseInt(e.target.value, 10) as 8 | 16 | 32)}>
+            <option value={8}>8</option>
+            <option value={16}>16</option>
+            <option value={32}>32</option>
+          </select>
+          <span className="text-zinc-400">Vector Scale:</span>
+          <input type="range" min={0.2} max={3} step={0.1} value={vectorScale}
+                 onChange={(e) => setVectorScale(parseFloat(e.target.value))} />
+          <span className="tabular-nums text-zinc-400">{vectorScale.toFixed(1)}×</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-zinc-400">Metric:</span>
@@ -213,6 +229,8 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
               minRange={minRange}
               maxRange={maxRange}
               size={resolution}
+              cells={vectorCells}
+              vectorScale={vectorScale}
             />
           </div>
         ) : (
@@ -239,7 +257,7 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
             )}
             <AgentsCloud agents={Object.values(points)} />
             {showVectors && <Vectors prev={prevRef.current} next={points} />}
-            {showField && densityTex && <VectorFieldGPU densityTex={densityTex} gradientTex={gradientTex} cells={16} />}
+            {showField && densityTex && <VectorFieldGPU densityTex={densityTex} gradientTex={gradientTex} cells={vectorCells} />}
             <OrbitControls enablePan enableZoom enableRotate />
           </Canvas>
         )}

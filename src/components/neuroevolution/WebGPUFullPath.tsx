@@ -12,9 +12,13 @@ type Props = {
   size?: number
   /** Optional WebSocket URL to stream RGBA float32 tiles into the density texture */
   wsUrl?: string
+  /** Vector field grid cells per side (e.g., 8/16/32) */
+  cells?: number
+  /** Vector magnitude scale multiplier */
+  vectorScale?: number
 }
 
-export default function WebGPUFullPath({ points, palette, metricMode, minRange, maxRange, size = 512, wsUrl }: Props) {
+export default function WebGPUFullPath({ points, palette, metricMode, minRange, maxRange, size = 512, wsUrl, cells: cellsProp = 16, vectorScale = 1.0 }: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
   const rafRef = React.useRef<number | null>(null)
 
@@ -242,6 +246,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
         primitive: { topology: 'triangle-list' },
       })
 
+      const vsScale = Math.max(0.1, Math.min(5.0, vectorScale));
       const vectorVS = /* wgsl */`
         struct Out { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> };
         @group(0) @binding(0) var uGradientTex: texture_2d<f32>;
@@ -263,7 +268,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
           var axis = normalize(cross(up, dir));
           if (length(axis) < 1e-4) { axis = vec3<f32>(1.0,0.0,0.0); }
           let R = rotFromAxisAngle(axis, ang);
-          let mag = clamp(length(g) * 5.0, 0.05, 0.3);
+          let mag = clamp(length(g) * 5.0, 0.05, 0.3) * ${vsScale.toFixed(2)}
           var p = pos; p.y *= mag; p *= 0.01; p = R * p; p += ipos;
           var o: Out; o.pos = vec4<f32>(p, 1.0);
           o.col = vec3<f32>(1.0, 1.0 - clamp(mag, 0.0, 1.0), 0.3);
@@ -287,7 +292,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
       device.queue.writeBuffer(quadBuf, 0, quadVerts)
 
       // Instance buffers for vector grid
-      const cells = 16
+      const cells = Math.max(4, Math.min(128, cellsProp | 0))
       const iuv = new Float32Array(cells * cells * 2)
       const ipos = new Float32Array(cells * cells * 3)
       let k = 0
@@ -445,7 +450,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
       <canvas ref={canvasRef} className="w-full h-full block" />
       <div className="absolute top-1 right-1 text-[10px] px-2 py-1 bg-black/50 border border-white/10 rounded space-y-0.5 text-white">
         <div>FPS: {Math.round((fps as any).current || 0)}</div>
-        <div>Res: {size}²</div>
+        <div>Res: {size}Ãƒâ€šÃ‚Â²</div>
         <div>WG/s: {Math.round((wgpsRef as any).current || 0)}</div>
       </div>
     </div>
