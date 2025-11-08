@@ -31,6 +31,12 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           <span className="text-sm">Dashboard</span>
         </button>
         <button
+          onClick={() => (window.location.href = '/dashboard#policy')}
+          className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+        >
+          <span className="text-sm">⚙ Policy</span>
+        </button>
+        <button
           onClick={() => window.open('/docs/Operator-Manual-Phase24D.md', '_blank')}
           className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition mr-2"
         >
@@ -48,4 +54,3 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
     </header>
   )
 }
-
