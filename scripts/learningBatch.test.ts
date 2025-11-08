@@ -4,6 +4,8 @@
    pnpm tsx scripts/learningBatch.test.ts --base http://localhost:3000 --count 1000 --lab plasma
 */
 
+import { getAdminDb } from '../src/lib/server/firebaseAdmin.js';
+
 type Args = { base: string; count: number; lab: 'plasma'|'spectral'|'chemistry'|'crypto' }
 
 function parseArgs(): Args {
@@ -57,19 +59,90 @@ function makeData(lab: Args['lab']) {
   }
 }
 
+async function cleanupTelemetry() {
+    const db = getAdminDb();
+    const telemetryRef = db.collection('telemetry');
+    const snapshot = await telemetryRef.where('userId', '==', 'smoke-user').get();
+    if (snapshot.empty) {
+        return;
+    }
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+    console.log(`[BatchTest] Cleaned up ${snapshot.size} old telemetry events.`);
+}
+
+async function testSingleWrite(url: string, lab: Args['lab']) {
+    console.log('[SingleWriteTest] Running single write test...');
+    const dataPoint = { labType: lab, data: makeData(lab) };
+    const t0 = Date.now();
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataPoint) });
+    const json = await res.json().catch(() => ({}));
+    const dt = Date.now() - t0;
+
+    if (!res.ok || !json?.ok) {
+        console.error('[SingleWriteTest] Single write failed:', json);
+        process.exit(1);
+    }
+    console.log(`[SingleWriteTest] posted=1 time=${dt}ms`);
+
+    // Verify telemetry
+    const db = getAdminDb();
+    const telemetryRef = db.collection('telemetry');
+    const snapshot = await telemetryRef.where('userId', '==', 'smoke-user').where('event', '==', 'learning.write.single').get();
+    if (snapshot.size === 1) {
+        console.log('[SingleWriteTest] Telemetry check PASSED: Found 1 learning.write.single event.');
+    } else {
+        console.error(`[SingleWriteTest] Telemetry check FAILED: Expected 1 learning.write.single event, but found ${snapshot.size}.`);
+        process.exit(1);
+    }
+}
+
 async function main() {
   const { base, count, lab } = parseArgs()
   const url = `${base.replace(/\/$/, '')}/api/learning/ingest`
+
+  await cleanupTelemetry();
+  await testSingleWrite(url, lab);
+  await cleanupTelemetry();
+
+  console.log(`[BatchTest] Running batch write test with ${count} data points...`);
   const dataPoints = Array.from({ length: count }, () => ({ labType: lab, data: makeData(lab) }))
   const t0 = Date.now()
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataPoints }) })
   const json = await res.json().catch(() => ({}))
   const dt = Date.now() - t0
   if (!res.ok || !json?.ok) {
-    console.error('Batch ingest failed:', json)
+    console.error('[BatchTest] Batch ingest failed:', json)
     process.exit(1)
   }
   console.log(`[BatchTest] posted=${count} total=${json.total} ok=${json.succeeded} failed=${json.failed} time=${dt}ms`)
+
+  // Verify telemetry
+  const db = getAdminDb();
+  const telemetryRef = db.collection('telemetry');
+  const snapshot = await telemetryRef.where('userId', '==', 'smoke-user').where('event', '==', 'learning.batch.commit').get();
+  
+  const expectedBatches = Math.ceil(count / 500);
+  if (snapshot.size === expectedBatches) {
+    console.log(`[BatchTest] Telemetry check PASSED: Found ${snapshot.size} learning.batch.commit events as expected.`);
+  } else {
+    console.error(`[BatchTest] Telemetry check FAILED: Expected ${expectedBatches} learning.batch.commit events, but found ${snapshot.size}.`);
+    process.exit(1);
+  }
+
+  // Verify performance
+  const latencies = snapshot.docs.map(doc => doc.data().meta.latencyMs);
+  latencies.sort((a, b) => a - b);
+  const p95Latency = latencies[Math.floor(latencies.length * 0.95) -1] || 0;
+  if (p95Latency < 100) {
+      console.log(`[BatchTest] Performance check PASSED: p95 latency is ${p95Latency}ms.`);
+  } else {
+      console.error(`[BatchTest] Performance check FAILED: p95 latency is ${p95Latency}ms, which is >= 100ms.`);
+      process.exit(1);
+  }
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })

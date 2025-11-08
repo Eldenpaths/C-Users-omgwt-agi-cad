@@ -57,42 +57,30 @@ export default function LearningPanel() {
         </div>
         {trends && (
           <div className="text-xs text-amber-300/80">
-            7d â€¢ total {deltaFmt(trends.delta.total)}, success {deltaPctFmt(trends.delta.successRate)}, runtime {deltaMsFmt(trends.delta.avgRuntimeMs)}
+            7d • total {deltaFmt(trends.delta.total)}, success {deltaPctFmt(trends.delta.successRate)}, runtime {deltaMsFmt(trends.delta.avgRuntimeMs)}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <Stat label="Total" value={total.toString()} />
-        <Stat label="Success Rate" value={`${(successRate * 100).toFixed(1)}%`} />
-        <Stat label="Avg Runtime" value={`${avgRuntime} ms`} />
-        <div />
+        <Stat label="Success Rate" value={(successRate * 100).toFixed(1) + '%'} />
+        <Stat label="Avg Runtime" value={avgRuntime + ' ms'} />
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-2">
-        <Stat label="Batch Writes" value={String(agg.totalWrites)} />
-        <Stat label="Avg Latency" value={`${agg.avgLatencyMs} ms`} />
-        <Stat label="p95 Latency" value={`${agg.p95LatencyMs} ms`} />
-        <Stat label="Error Rate" value={`${(agg.errorRate * 100).toFixed(1)}%`} />
-      </div>
-
-      <div className="mb-6">
-        <div className="text-xs text-amber-300/80 mb-2">Recent Batch Events</div>
-        <ul className="text-sm divide-y divide-amber-500/10">
-          {(batchEvents ?? []).slice(0, 5).map((event: any) => (
-            <BatchEventListItem key={event.id} event={event} />
-          ))}
-          {(batchEvents ?? []).length === 0 && <li className="py-1 text-amber-400/60 text-xs">No batch events yet.</li>}
-        </ul>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <Stat label="Batch Writes (recent)" value={String(agg.totalWrites)} />
+        <Stat label="Avg Latency" value={${agg.avgLatencyMs} ms} />
+        <Stat label="Error Rate" value={${(agg.errorRate * 100).toFixed(1)}%} />
       </div>
 
       <div className="mb-4 flex items-center gap-3">
         <button
           disabled={!uid || submitting}
           onClick={() => { if (!uid) return; demoSubmit(uid, setSubmitting, setLastResult); }}
-          className="px-3 py-1.5 rounded border text-sm border-amber-500/30 text-amber-100 disabled:opacity-50"
+          className={px-3 py-1.5 rounded border text-sm  border-amber-500/30 text-amber-100}
         >
-          {submitting ? 'Submittingâ€¦' : 'Submit Demo Experiment'}
+          {submitting ? 'Submitting…' : 'Submit Demo Experiment'}
         </button>
         {lastResult && <span className="text-xs text-amber-300/80">{lastResult}</span>}
       </div>
@@ -108,11 +96,11 @@ export default function LearningPanel() {
             <li key={i} className="py-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 text-xs rounded bg-amber-500/10 border border-amber-500/20 text-amber-200">{s.labType}</span>
-                <span className="text-amber-100/90">{s.summary ?? 'â€”'}</span>
+                <span className="text-amber-100/90">{s.summary ?? '—'}</span>
               </div>
               <div className="text-amber-300/80">
-                <span className="mr-3">{s.runtimeMs ?? 0} ms</span>
-                <span className={s.success ? 'text-emerald-400' : 'text-rose-400'}>{s.success ? 'âœ”' : 'âœ–'}</span>
+                <span className="mr-3">{(s.runtimeMs ?? 0)} ms</span>
+                <span className={s.success ? 'text-emerald-400' : 'text-rose-400'}>{s.success ? '?' : '?'}</span>
               </div>
             </li>
           ))}
@@ -120,31 +108,6 @@ export default function LearningPanel() {
         </ul>
       </div>
     </div>
-  );
-}
-
-function BatchEventListItem({ event }: { event: any }) {
-  const isError = event.event === 'learning.batch.error';
-  const batchSize = event.meta?.batchSize ?? 'N/A';
-  const latency = event.meta?.latencyMs ?? 'N/A';
-  const attempt = event.meta?.attempt ?? 1;
-
-  return (
-    <li className="py-1.5 flex items-center justify-between text-xs">
-      <div className="flex items-center gap-2">
-        <span className={`font-mono text-xs ${isError ? 'text-rose-400' : 'text-emerald-400'}`}>
-          {isError ? 'ERR' : 'OK'}
-        </span>
-        <span className="text-amber-100/90">
-          {isError ? 'Batch failed' : 'Batch commit'}
-        </span>
-      </div>
-      <div className="text-amber-300/80 font-mono">
-        <span className="mr-3">size: {batchSize}</span>
-        {!isError && <span className="mr-3">lat: {latency}ms</span>}
-        {attempt > 1 && <span className="text-amber-500">retry: {attempt}</span>}
-      </div>
-    </li>
   );
 }
 
@@ -165,7 +128,7 @@ function Sparkline({ points, height = 36 }: { points: number[]; height?: number 
     .map((v, i) => {
       const x = (i / (n - 1 || 1)) * (w - 4) + 2;
       const y = height - 2 - (v / (max || 1)) * (height - 4);
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
+      return ${i === 0 ? 'M' : 'L'},;
     })
     .join(' ');
   return (
@@ -188,17 +151,17 @@ function averageRuntime(rows: any[]) {
 }
 
 function deltaFmt(n: number) {
-  if (n === 0) return 'Â±0';
-  return n > 0 ? `+${n}` : `${n}`;
+  if (n === 0) return '±0';
+  return n > 0 ? + : ${n};
 }
 function deltaPctFmt(n: number) {
   const p = (n * 100).toFixed(1) + '%';
-  if (n === 0) return 'Â±0%';
-  return n > 0 ? `+${p}` : `${p}`;
+  if (n === 0) return '±0%';
+  return n > 0 ? + : ${p};
 }
 function deltaMsFmt(n: number) {
-  if (n === 0) return 'Â±0 ms';
-  return n > 0 ? `+${n} ms` : `${n} ms`;
+  if (n === 0) return '±0 ms';
+  return n > 0 ? + ms : ${n} ms;
 }
 
 function aggregateBatchTelemetry(events: any[]) {
@@ -243,15 +206,16 @@ async function demoSubmit(uid: string, setSubmitting: (b: boolean) => void, setL
     };
     const res = await fetch('/api/learning/ingest', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      headers: { 'Content-Type': 'application/json', Authorization: Bearer  },
       body: JSON.stringify(payload),
     });
     const json = await res.json();
     if (!res.ok || !json.ok) throw new Error(json.error || 'Request failed');
-    setLastResult(`Saved id ${json.id}`);
+    setLastResult(Saved id );
   } catch (e: any) {
-    setLastResult(`Error: ${e.message}`);
+    setLastResult(Error: );
   } finally {
     setSubmitting(false);
   }
 }
+
