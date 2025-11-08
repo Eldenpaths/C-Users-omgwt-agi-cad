@@ -18,6 +18,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const process = new EvolutionProcess();
     const result = await process.step();
     recordEvolutionStep(result.updated);
+    // Attempt to persist to Firestore
+    try {
+      const { getFirestoreInstance } = await import('@/lib/firebase/server');
+      const db = getFirestoreInstance();
+      await db.collection('router_evolution').add({ ts: Date.now(), uid: auth.user?.uid || 'system', updates: result.updated });
+    } catch {}
     return res.status(200).json({ ok: true, updated: result.updated });
   } catch (e: any) {
     return res.status(500).json({ ok: false, error: e?.message || 'evolve failed' });

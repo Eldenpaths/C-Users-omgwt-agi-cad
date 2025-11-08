@@ -27,6 +27,18 @@ export class EvolutionProcess {
    * Fitness = emaSuccess * 0.8 + (1/emaLatency) * 0.2 (normalized)
    */
   async step(): Promise<{ updated: Array<{ agent: AgentId; bias: number; prevBias: number }> }> {
+    // Compute a plan first, then apply
+    const plan = this.preview();
+    for (const u of plan.updated) {
+      setAgentOverride(u.agent as AgentId, { bias: u.bias });
+    }
+    return plan;
+  }
+
+  /**
+   * Preview one evolution step without applying.
+   */
+  preview(): { updated: Array<{ agent: AgentId; bias: number; prevBias: number }> } {
     const snap = getSnapshot();
     const agents = Object.values(snap.agents);
     if (agents.length === 0) return { updated: [] };
@@ -46,7 +58,6 @@ export class EvolutionProcess {
       const delta = (score - 0.5) * 2 * this.cfg.biasStep; // -step..+step
       const current = snap.agents[f.id].bias ?? 0;
       const next = clamp(current + delta, -this.cfg.maxAbsBias, this.cfg.maxAbsBias);
-      setAgentOverride(f.id as AgentId, { bias: next });
       updated.push({ agent: f.id as AgentId, bias: next, prevBias: current });
     }
     return { updated };
