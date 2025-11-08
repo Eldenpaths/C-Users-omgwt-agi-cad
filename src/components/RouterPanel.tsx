@@ -8,9 +8,11 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { getDbInstance } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import ProfileTrend from '@/components/ProfileTrend'
+import PolicyControls from '@/components/PolicyControls'
 import { setAdaptive } from '@/lib/routerProfiles/profileStore'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
-import ProfileAgentTrends from '@/components/ProfileAgentTrends'
+
+import PolicyControls from '@/components/PolicyControls'
 
 type AgentStats = {
   agent: AgentId
@@ -246,6 +248,29 @@ export default function RouterPanel() {
         {operatorUid && rewards.length > 0 && (
           <ProfileAgentTrends rewards={rewards} />
         )}
+        {operatorUid && rewards.length > 0 && (
+          <div className="mt-2">
+            <button
+              className="px-2 py-1 rounded border hover:bg-gray-50 text-xs"
+              onClick={() => {
+                try {
+                  const header = 'taskId,agent,delta,timestamp\n'
+                  const rows = rewards.map(r => `${r.taskId},${r.agent},${Number(r.delta||0)},${r.timestamp}`)
+                  const csv = header + rows.join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `rewards-${operatorUid}.csv`
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                  URL.revokeObjectURL(url)
+                } catch {}
+              }}
+            >Export CSV</button>
+          </div>
+        )}
         {operatorUid && (
           <div className="mt-3 flex items-center gap-3">
             <label className="flex items-center gap-2">
@@ -266,3 +291,4 @@ export default function RouterPanel() {
     </div>
   )
 }
+
