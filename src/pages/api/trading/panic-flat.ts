@@ -17,9 +17,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const reason = (req.body && typeof req.body === 'object') ? (req.body as any).reason : undefined;
     // TODO: integrate with real trading orchestrator to flatten positions
     await Telemetry.logEvent({
+      userId: 'system',
       event: 'panic_flat_requested',
-      payload: { source: 'mission_control', reason },
-      timestamp: new Date(),
+      meta: { source: 'mission_control', reason },
+      timestamp: Date.now(),
     });
     return res.status(200).json({ ok: true });
   } catch (e: any) {

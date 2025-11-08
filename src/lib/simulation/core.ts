@@ -75,7 +75,7 @@ export class SimulationCore {
     }
     const state = this.states.get(labId)!;
     this.emit({ type: 'start', labId, state });
-    await Telemetry.logEvent({ userId: this.userId, agentId: this.agentId, labType: labId, event: 'simulation_start' });
+    await Telemetry.logEvent({ userId: this.userId || 'system', agentId: this.agentId, labType: labId, event: 'simulation_start' });
   }
 
   /** Stop a lab simulation; stops scheduler if no labs running. */
@@ -84,7 +84,7 @@ export class SimulationCore {
     this.running.delete(labId);
     const state = this.states.get(labId)!;
     this.emit({ type: 'stop', labId, state });
-    await Telemetry.logEvent({ userId: this.userId, agentId: this.agentId, labType: labId, event: 'simulation_stop' });
+    await Telemetry.logEvent({ userId: this.userId || 'system', agentId: this.agentId, labType: labId, event: 'simulation_stop' });
     if (this.running.size === 0 && this.scheduler) {
       this.scheduler.stop();
       this.scheduler = null;
@@ -120,4 +120,3 @@ export function getSimulationCore(): SimulationCore {
 }
 
 export default SimulationCore;
-

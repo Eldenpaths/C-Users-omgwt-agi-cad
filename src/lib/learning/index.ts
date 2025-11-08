@@ -1,15 +1,22 @@
 /**
  * Learning Infrastructure Core
  *
- * This subsystem ingests experiment data from AGI-CAD labs, validates it,
- * emits telemetry, persists canonical learning sessions to Firestore, and
- * generates Pinecone embeddings for long-term search and analysis. It also
- * exposes analytics utilities and React hooks for real-time dashboards.
+ * This subsystem ingests lab experiment results, validates payloads,
+ * logs telemetry, persists to Firestore (`learning_sessions`),
+ * and optionally generates vector embeddings for long-term analysis.
+ *
+ * Exports:
+ * - LearningCore: orchestrates ingest + embeddings
+ * - validateExperiment: strict Zod validation per lab
+ * - Telemetry: lightweight logger to `telemetry`
+ * - analyzeLearning: aggregate analytics for dashboards
+ * - Hooks: useLearningSessions, useTelemetryFeed for real-time UI
  */
-
-export * from './validator';
-export * from './telemetry';
-export * from './learningCore';
-export * from './analyzer';
-export * from './hooks';
-
+export { LearningCore } from './learningCore';
+export type { LearningCoreOptions, IngestResult } from './learningCore';
+export { validateExperiment, LabSchemas } from './validator';
+export type { AnyExperiment } from './validator';
+export type { TelemetryEvent } from './telemetry';
+export { default as Telemetry } from './telemetry';
+export { analyzeLearning, analyzeLearningTrends } from './analyzer';
+export { useLearningSessions, useTelemetryFeed } from './hooks';

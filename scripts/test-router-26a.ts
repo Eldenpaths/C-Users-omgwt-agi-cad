@@ -1,12 +1,12 @@
-/**
- * Phase 26A test harness � simulate policies and verify bias adjustments.
+﻿/**
+ * Phase 26A test harness — simulate policies and verify bias adjustments.
  */
 import { computeRollingDelta, applyPolicyAdjustments } from '@/lib/routerProfiles/policyEngine'
 import type { PolicyConfig } from '@/lib/routerProfiles/policyTypes'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
 
 const rewards: RewardRecord[] = Array.from({ length: 50 }, (_, i) => ({
-  taskId: 	_,
+  taskId: "r_{i}",
   agent: i % 2 === 0 ? 'EchoArchivist' : 'Fractalwright',
   delta: (Math.random() - 0.4) * 0.5,
   timestamp: Date.now() - i * 1000,

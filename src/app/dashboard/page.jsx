@@ -12,6 +12,7 @@ import { initializeVault } from '@/lib/vault';
 import DriftMapCanvas from '@/components/DriftMapCanvas';
 import { initializeFusionBridge } from '@/lib/meta/fusion-bridge';
 import RouterPanel from '@/components/RouterPanel';
+import LearningPanel from '@/components/LearningPanel';
 import RouterControlPanel from '@/components/RouterControlPanel';
 
 export default function DashboardPage() {
@@ -49,6 +50,7 @@ export default function DashboardPage() {
             </div>
             <h2 className="text-xl font-semibold text-amber-200 mb-2">Router HUD</h2>
             <RouterPanel />
+            <LearningPanel />
             <button
               onClick={() => setOpen(true)}
               className="fixed bottom-6 right-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 shadow-lg"
@@ -71,6 +73,13 @@ export default function DashboardPage() {
               <VaultPanel />
               <ForgePanel />
             </div>
+          </div>
+
+          {/* Phase 27E banner */}
+          <div className="mt-8 text-xs text-amber-300/70 border-t border-amber-500/20 pt-3">
+            <a href="/docs/checkpoints/phase27E.md" target="_blank" rel="noreferrer" className="hover:text-amber-200 underline underline-offset-2">
+              Phase 27E — TypeSafe LearningCore + HUD Stability ✓
+            </a>
           </div>
         </div>
       </div>

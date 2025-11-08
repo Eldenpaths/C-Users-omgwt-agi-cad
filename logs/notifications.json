@@ -1,0 +1,31 @@
+[
+  {
+    "ts": "2025-11-08T01:42:03.501Z",
+    "message": "Thread rotation recommended: thresholds reached",
+    "reasons": [
+      "tokenCount>=50000"
+    ],
+    "lastCommitTime": 1762561575000
+  },
+  {
+    "ts": "2025-11-08T01:41:55.841Z",
+    "message": "Thread rotation recommended: thresholds reached",
+    "reasons": [
+      "tokenCount>=50000"
+    ],
+    "lastCommitTime": 1762561575000
+  },
+  {
+    "ts": "2025-11-08T01:36:16.953Z",
+    "message": "Phase checkpoint due; consider starting a new thread.",
+    "schedule": "weekly"
+  },
+  {
+    "ts": "2025-11-08T01:36:16.890Z",
+    "message": "Thread rotation recommended: thresholds reached",
+    "reasons": [
+      "tokenCount>=50000"
+    ],
+    "lastCommitTime": 1762561575000
+  }
+]

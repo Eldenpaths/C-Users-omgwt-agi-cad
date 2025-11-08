@@ -6,7 +6,7 @@
       "dom.iterable",
       "esnext"
     ],
-    "types": ["@webgpu/types"],
+    "types": ["@webgpu/types", "jest", "node"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -39,6 +39,7 @@
   "exclude": [
     "node_modules",
     "tests",
-    "functions"
+    "functions",
+    "src/pages/learning"
   ]
 }

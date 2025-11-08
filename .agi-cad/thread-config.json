@@ -1,0 +1,8 @@
+{
+  "maxMessages": 200,
+  "maxTokens": 50000,
+  "reminderDays": ["Friday"],
+  "reminderHour": 9,
+  "driftThreshold": 0.15
+}
+

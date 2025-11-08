@@ -2,9 +2,14 @@
 import React from 'react'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
 
-type Props = {\n  rewards: RewardRecord[]\n  width?: number\n  height?: number\n  hoverT?: number\n}
+type Props = {
+  rewards: RewardRecord[]
+  width?: number
+  height?: number
+  hoverT?: number
+}
 
-export default function ProfileTrend({ rewards, width = 220, height = 48, hoverT }: Props) {
+export default function ProfileTrend({ rewards, width = 220, height = 48 }: Props) {
   const pad = 4
   const w = width
   const h = height
@@ -18,10 +23,8 @@ export default function ProfileTrend({ rewards, width = 220, height = 48, hoverT
     return pad + (1 - t) * (h - pad * 2)
   }
 
-  // Build line path
   const path = values.map((v, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i)},${scaleY(v)}`).join(' ')
 
-  // Build area path to zero baseline for subtle gradient fill
   const areaPath = (() => {
     if (values.length === 0) return ''
     const baseY = scaleY(0)
@@ -39,21 +42,15 @@ export default function ProfileTrend({ rewards, width = 220, height = 48, hoverT
           <stop offset="100%" stopColor="#93c5fd" stopOpacity="0" />
         </linearGradient>
       </defs>
-      {/* zero line */}
       <line x1={pad} x2={w - pad} y1={scaleY(0)} y2={scaleY(0)} stroke="#e5e7eb" strokeDasharray="2,2" />
-      {/* gradient area */}
       {areaPath && <path d={areaPath} fill="url(#trendFill)" stroke="none" />}
-      {/* main path */}
       <path d={path} fill="none" stroke="#94a3b8" strokeWidth={1.5} />
-      {/* per-point dots colored by sign; last has tooltip */}
       {values.map((v, i) => (
         <circle key={i} cx={scaleX(i)} cy={scaleY(v)} r={2} fill={v >= 0 ? '#10b981' : '#ef4444'}>
-          {i === values.length - 1 ? <title>Δ {v.toFixed(3)}</title> : null}
+          {i === values.length - 1 ? <title>{v.toFixed(3)}</title> : null}
         </circle>
       ))}
     </svg>
   )
 }
-
-
 

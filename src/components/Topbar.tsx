@@ -3,7 +3,7 @@
 import React from 'react'
 import { Menu, LogOut, BookOpenText } from 'lucide-react'
 import { signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { getAuthInstance } from '@/lib/firebase'
 
 export interface TopbarProps {
   toggleSidebar?: () => void
@@ -12,6 +12,8 @@ export interface TopbarProps {
 export default function Topbar({ toggleSidebar }: TopbarProps) {
   const handleSignOut = async () => {
     try {
+      const auth = getAuthInstance()
+      if (!auth) return
       await signOut(auth)
     } catch (e) {
       console.error('Sign out failed', e)
@@ -42,6 +44,19 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
         >
           <BookOpenText className="w-4 h-4" />
           <span className="text-sm">24D Manual</span>
+        </button>
+        <button
+          onClick={() => window.open('/docs/checkpoints/phase27E.md', '_blank')}
+          className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition mr-2"
+        >
+          <BookOpenText className="w-4 h-4" />
+          <span className="text-sm">27E Checkpoint</span>
+        </button>
+        <button
+          onClick={() => (window.location.href = '/dashboard#thread')}
+          className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+        >
+          <span className="text-sm">Thread Health</span>
         </button>
       </div>
       <button

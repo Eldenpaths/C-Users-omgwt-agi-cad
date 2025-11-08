@@ -3,11 +3,13 @@
 // Purpose: Server-side Firebase Admin initialization
 // Status: Production - Hybrid Safe Mode Active
 
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-
 let initialized = false;
 
 export function initAdmin() {
+  if (typeof window !== 'undefined') {
+    throw new Error('firebase-admin should not be used in client code');
+  }
+  const { initializeApp, getApps, cert } = (eval('require') as any)('firebase-admin/app');
   if (initialized || getApps().length > 0) return;
 
   try {
