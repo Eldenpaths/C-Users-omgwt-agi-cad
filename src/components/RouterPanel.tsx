@@ -1,4 +1,4 @@
-// src/components/RouterPanel.tsx
+﻿// src/components/RouterPanel.tsx
 'use client'
 
 import React from 'react'
@@ -10,6 +10,9 @@ import { doc, getDoc } from 'firebase/firestore'
 import ProfileTrend from '@/components/ProfileTrend'
 import ProfileAgentTrends from '@/components/ProfileAgentTrends'
 import ThreadHealth from '@/components/ThreadHealth'
+import TopbarAuth from '@/components/TopbarAuth'
+import FeedbackPrompt from '@/components/FeedbackPrompt'
+
 import PolicyControls from '@/components/PolicyControls'
 import { setAdaptive } from '@/lib/routerProfiles/profileStore'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
@@ -54,6 +57,7 @@ export default function RouterPanel() {
   const [adaptive, setAdaptiveFlag] = React.useState<boolean>(true)
   const [evolveMsg, setEvolveMsg] = React.useState<string | null>(null)
   const [evolveList, setEvolveList] = React.useState<Array<{ agent: string; bias: number }> | null>(null)
+  const [previewList, setPreviewList] = React.useState<Array<{ agent: string; bias: number }> | null>(null)
 
   React.useEffect(() => {
     const es = new EventSource('/api/route?stream=1')
@@ -116,7 +120,7 @@ export default function RouterPanel() {
     return (
       <div className="rounded-2xl border p-4 shadow-sm">
         <div className="text-sm text-gray-500">Router HUD</div>
-        <div className="mt-1 text-lg font-semibold">Connecting…</div>
+        <div className="mt-1 text-lg font-semibold">Connectingâ€¦</div>
       </div>
     )
   }
@@ -143,10 +147,11 @@ export default function RouterPanel() {
               onClick={() => fetch('/api/route?resume=1').then(() => setPaused(false))}
             >Resume</button>
             <div className="text-xs text-gray-400">
-              v{snap.version} · {new Date(snap.updatedAt).toLocaleTimeString()}
+              v{snap.version} Â· {new Date(snap.updatedAt).toLocaleTimeString()}
             </div>
           </div>
         </div>
+        <div className="flex justify-end mb-2"><TopbarAuth /></div>
         <div className="mt-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {agents.map((a) => (
             <div key={a.agent} className="rounded-xl border p-3">
@@ -172,7 +177,7 @@ export default function RouterPanel() {
                   <div className="font-medium">{Math.round(a.emaLatency)} ms</div>
                 </div>
               </div>
-              <div className="mt-2 text-xs text-gray-500">last call: {a.lastCalledAt ? new Date(a.lastCalledAt).toLocaleTimeString() : '—'}</div>
+              <div className="mt-2 text-xs text-gray-500">last call: {a.lastCalledAt ? new Date(a.lastCalledAt).toLocaleTimeString() : 'â€”'}</div>
             </div>
           ))}
         </div>
@@ -199,9 +204,9 @@ export default function RouterPanel() {
                   <tr key={`${r.taskId}-${r.at}`} className="border-t">
                     <td className="py-1">{new Date(r.at).toLocaleTimeString()}</td>
                     <td className="py-1 font-medium">{r.agent}</td>
-                    <td className={`py-1 ${r.success ? 'text-emerald-600' : 'text-rose-600'}`}>{r.success ? '✓' : '✕'}</td>
+                    <td className={`py-1 ${r.success ? 'text-emerald-600' : 'text-rose-600'}`}>{r.success ? 'âœ“' : 'âœ•'}</td>
                     <td className="py-1">{r.latencyMs} ms</td>
-                    <td className="py-1 text-gray-500">{r.taskId.slice(0, 8)}…</td>
+                    <td className="py-1 text-gray-500">{r.taskId.slice(0, 8)}â€¦</td>
                   </tr>
                 ))}
             </tbody>
@@ -220,6 +225,20 @@ export default function RouterPanel() {
             <button className="px-2 py-1 rounded border hover:bg-gray-50 mr-2" onClick={() => fetch('/api/route?save=1')}>Save</button>
             <button className="px-2 py-1 rounded border hover:bg-gray-50 mr-2" onClick={() => fetch('/api/route?load=1')}>Load</button>
             <button className="px-2 py-1 rounded border hover:bg-gray-50" onClick={() => fetch('/api/route?reset=1')}>Reset</button>
+            <button className="ml-2 px-2 py-1 rounded border border-amber-500 text-amber-700 hover:bg-amber-50" onClick={async () => {
+              // Preview evolve (no apply)
+              try {
+                const res = await fetch('/api/router/evolution/preview')
+                const json = await res.json()
+                if (!res.ok || !json.ok) throw new Error(json.error || 'request failed')
+                setPreviewList(Array.isArray(json.updated) ? json.updated : null)
+                setEvolveMsg('Preview only Â· no changes applied')
+                try { const { default: Telemetry } = await import('@/lib/learning/telemetry'); await Telemetry.logEvent({ userId: 'system', event: 'evolve_preview' }) } catch {}
+              } catch (e: any) {
+                setEvolveMsg(`Preview failed: ${e?.message || 'error'}`)
+                setPreviewList(null)
+              }
+            }}>Preview Evolve</button>
             <button className="ml-2 px-2 py-1 rounded border border-emerald-500 text-emerald-700 hover:bg-emerald-50" onClick={async () => {
               try {
                 const { getAuthInstance } = await import('@/lib/firebase')
@@ -231,8 +250,10 @@ export default function RouterPanel() {
                 const json = await res.json()
                 if (!res.ok || !json.ok) throw new Error(json.error || 'request failed')
                 const n = Array.isArray(json.updated) ? json.updated.length : 0
-                setEvolveMsg(`Evolution step complete · updated ${n} agents`)
+                setEvolveMsg(`Evolution step complete Â· updated ${n} agents`)
                 setEvolveList(Array.isArray(json.updated) ? json.updated : null)
+                setPreviewList(null)
+                try { const { default: Telemetry } = await import('@/lib/learning/telemetry'); await Telemetry.logEvent({ userId: u.uid, event: 'evolve_apply', meta: { count: n } }) } catch {}
               } catch (e: any) {
                 setEvolveMsg(`Evolution failed: ${e?.message || 'error'}`)
                 setEvolveList(null)
@@ -249,8 +270,10 @@ export default function RouterPanel() {
                 const json = await res.json()
                 if (!res.ok || !json.ok) throw new Error(json.error || 'request failed')
                 const n = Array.isArray(json.reverted) ? json.reverted.length : 0
-                setEvolveMsg(`Reverted last evolution · restored ${n} agents`)
+                setEvolveMsg(`Reverted last evolution Â· restored ${n} agents`)
                 setEvolveList(Array.isArray(json.reverted) ? json.reverted : null)
+                setPreviewList(null)
+                try { const { default: Telemetry } = await import('@/lib/learning/telemetry'); await Telemetry.logEvent({ userId: u.uid, event: 'evolve_revert', meta: { count: n } }) } catch {}
               } catch (e: any) {
                 setEvolveMsg(`Revert failed: ${e?.message || 'error'}`)
                 setEvolveList(null)
@@ -260,25 +283,25 @@ export default function RouterPanel() {
         </div>
         <div className="mt-2">
           {diff?.changed ? (
-            <div className="text-amber-600">Δ detected between Firestore and memory (see console for details)</div>
+            <div className="text-amber-600">Î” detected between Firestore and memory (see console for details)</div>
           ) : (
             <div className="text-emerald-600">Snapshots in sync</div>
           )}
         </div>
         {adminOffline && (
-          <div className="mt-2 text-amber-500 italic">Admin unavailable · using client snapshot only</div>
+          <div className="mt-2 text-amber-500 italic">Admin unavailable Â· using client snapshot only</div>
         )}
         {operatorUid && (
           <div className="mt-2 text-gray-500">
             Operator: <span className="font-medium">{operatorUid}</span>
             {typeof avgReward === 'number' && (
               <>
-                {' '}· Avg Reward {avgReward.toFixed(3)}
+                {' '}Â· Avg Reward {avgReward.toFixed(3)}
               </>
             )}
             {profileUpdatedAt && (
               <>
-                {' '}· Profile Saved {new Date(profileUpdatedAt).toLocaleTimeString()}
+                {' '}Â· Profile Saved {new Date(profileUpdatedAt).toLocaleTimeString()}
               </>
             )}
           </div>
@@ -291,6 +314,16 @@ export default function RouterPanel() {
         {evolveMsg && (
           <div className="mt-2 text-xs text-emerald-700">{evolveMsg}</div>
         )}
+        {previewList && previewList.length > 0 && (
+          <div className="mt-2 text-xs text-amber-700">
+            {previewList.map((u) => (
+              <div key={u.agent} className="flex items-center justify-between">
+                <span className="font-mono">{u.agent}</span>
+                <span className="tabular-nums">preview bias {u.bias.toFixed(3)}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {evolveList && evolveList.length > 0 && (
           <div className="mt-2 text-xs text-emerald-700">
             {evolveList.map((u) => (
@@ -302,7 +335,12 @@ export default function RouterPanel() {
           </div>
         )}
         {operatorUid && rewards.length > 0 && (
-          <ProfileAgentTrends rewards={rewards} />
+          <>
+            <ProfileAgentTrends rewards={rewards} />
+            <div className="mt-3">
+              <FeedbackPrompt context="router_evolution" />
+            </div>
+          </>
         )}
         {operatorUid && rewards.length > 0 && (
           <div className="mt-2">
@@ -347,3 +385,7 @@ export default function RouterPanel() {
     </div>
   )
 }
+
+
+
+

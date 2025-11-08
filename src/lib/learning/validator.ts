@@ -1,102 +1,118 @@
+/**
+ * Learning Infrastructure Core — Validator
+ *
+ * Provides Zod schemas and a single entry point `validateExperiment`
+ * to validate experiment payloads coming from different labs before
+ * persisting to Firestore. Fully typed and extensible.
+ */
+
 import { z } from 'zod';
 
+/** Supported lab types */
+export type LabType = 'plasma' | 'spectral' | 'chemistry' | 'crypto';
+
 /**
- * Zod schemas for lab experiment payloads.
- * These are intentionally minimal but capture core structure used across labs.
+ * Common metadata shared by all lab submissions
  */
-
-export const BaseExperimentSchema = z.object({
-  experimentId: z.string().min(1),
-  userId: z.string().min(1),
-  agentId: z.string().min(1),
-  labType: z.enum(['plasma', 'spectral', 'chemistry', 'crypto']),
-  timestamp: z.number().int().nonnegative(),
-  runtimeMs: z.number().int().nonnegative().optional().default(0),
-  success: z.boolean().optional().default(true),
-  error: z.string().optional(),
-  summary: z.string().optional().default(''),
+const CommonMetaSchema = z.object({
+  userId: z.string().min(1, 'userId required'),
+  agentId: z.string().min(1, 'agentId required'),
+  runId: z.string().min(1, 'runId required'),
+  startedAt: z.union([z.number(), z.date()]).optional(),
+  finishedAt: z.union([z.number(), z.date()]).optional(),
+  runtimeMs: z.number().nonnegative().optional(),
+  success: z.boolean().optional(),
+  notes: z.string().max(20000).optional(),
 });
 
-const PlasmaMetricsSchema = z.object({
-  energyInputJ: z.number().nonnegative(),
-  plasmaTempK: z.number().positive(),
-  confinementStability: z.number().min(0).max(1),
-});
-
-const SpectralMetricsSchema = z.object({
-  wavelengthNm: z.number().positive(),
-  intensity: z.number().nonnegative(),
-  snr: z.number().nonnegative(),
-});
-
-const ChemistryMetricsSchema = z.object({
-  yieldPct: z.number().min(0).max(100),
-  purityPct: z.number().min(0).max(100),
-  reactionTimeSec: z.number().nonnegative(),
-});
-
-const CryptoMetricsSchema = z.object({
-  throughputTxS: z.number().nonnegative(),
-  latencyMs: z.number().nonnegative(),
-  errorRate: z.number().min(0).max(1),
-});
-
-export const PlasmaExperimentSchema = BaseExperimentSchema.extend({
+/** Plasma lab schema */
+const PlasmaSchema = CommonMetaSchema.extend({
   labType: z.literal('plasma'),
-  metrics: PlasmaMetricsSchema,
+  parameters: z.object({
+    temperatureK: z.number().positive(),
+    density: z.number().nonnegative(),
+    magneticFieldT: z.number().optional(),
+  }),
+  measurements: z.object({
+    confinementTimeMs: z.number().nonnegative(),
+    energyOutputJ: z.number().nonnegative(),
+    instabilityEvents: z.number().int().nonnegative().default(0),
+  }),
 });
 
-export const SpectralExperimentSchema = BaseExperimentSchema.extend({
+/** Spectral lab schema */
+const SpectralSchema = CommonMetaSchema.extend({
   labType: z.literal('spectral'),
-  metrics: SpectralMetricsSchema,
+  parameters: z.object({
+    wavelengthNm: z.number().positive(),
+    exposureMs: z.number().nonnegative(),
+    sensorGain: z.number().nonnegative().default(1),
+  }),
+  measurements: z.object({
+    peakIntensity: z.number().nonnegative(),
+    snr: z.number().nonnegative(),
+    spectrum: z.array(z.tuple([z.number(), z.number()])).optional(),
+  }),
 });
 
-export const ChemistryExperimentSchema = BaseExperimentSchema.extend({
+/** Chemistry lab schema */
+const ChemistrySchema = CommonMetaSchema.extend({
   labType: z.literal('chemistry'),
-  metrics: ChemistryMetricsSchema,
+  parameters: z.object({
+    reagentA: z.string().min(1),
+    reagentB: z.string().min(1),
+    temperatureC: z.number(),
+    pressureAtm: z.number().positive().optional(),
+  }),
+  measurements: z.object({
+    yieldPercent: z.number().min(0).max(100),
+    byproducts: z.array(z.string()).optional(),
+    purityPercent: z.number().min(0).max(100).optional(),
+  }),
 });
 
-export const CryptoExperimentSchema = BaseExperimentSchema.extend({
+/** Crypto lab schema */
+const CryptoSchema = CommonMetaSchema.extend({
   labType: z.literal('crypto'),
-  metrics: CryptoMetricsSchema,
+  parameters: z.object({
+    algorithm: z.enum(['sha256', 'blake3', 'rsa', 'secp256k1', 'ed25519']),
+    payloadSizeBytes: z.number().int().nonnegative(),
+    iterations: z.number().int().positive().default(1),
+  }),
+  measurements: z.object({
+    throughputOps: z.number().nonnegative(),
+    latencyMs: z.number().nonnegative(),
+    errorRate: z.number().min(0).max(1).optional(),
+  }),
 });
 
-export type PlasmaExperiment = z.infer<typeof PlasmaExperimentSchema>;
-export type SpectralExperiment = z.infer<typeof SpectralExperimentSchema>;
-export type ChemistryExperiment = z.infer<typeof ChemistryExperimentSchema>;
-export type CryptoExperiment = z.infer<typeof CryptoExperimentSchema>;
+/** Discriminated union over labType */
+export const ExperimentSchema = z.discriminatedUnion('labType', [
+  PlasmaSchema,
+  SpectralSchema,
+  ChemistrySchema,
+  CryptoSchema,
+]);
 
-export type AnyExperiment =
-  | PlasmaExperiment
-  | SpectralExperiment
-  | ChemistryExperiment
-  | CryptoExperiment;
+export type PlasmaExperiment = z.infer<typeof PlasmaSchema>;
+export type SpectralExperiment = z.infer<typeof SpectralSchema>;
+export type ChemistryExperiment = z.infer<typeof ChemistrySchema>;
+export type CryptoExperiment = z.infer<typeof CryptoSchema>;
+export type AnyExperiment = z.infer<typeof ExperimentSchema>;
 
 /**
- * Validate incoming experiment data based on lab type.
- * Throws ZodError on invalid payloads.
+ * Validate experiment payload by lab type.
+ * Throws ZodError on invalid shape. Returns typed data on success.
  */
-export function validateExperiment(labType: AnyExperiment['labType'], data: unknown): AnyExperiment {
-  switch (labType) {
-    case 'plasma':
-      return PlasmaExperimentSchema.parse(data);
-    case 'spectral':
-      return SpectralExperimentSchema.parse(data);
-    case 'chemistry':
-      return ChemistryExperimentSchema.parse(data);
-    case 'crypto':
-      return CryptoExperimentSchema.parse(data);
-    default:
-      throw new Error(`Unsupported labType: ${String((data as any)?.labType ?? labType)}`);
-  }
+export function validateExperiment<T extends LabType>(labType: T, data: unknown): AnyExperiment {
+  return ExperimentSchema.parse({ ...(data as object), labType });
 }
 
-export const LabSchemas = {
-  plasma: PlasmaExperimentSchema,
-  spectral: SpectralExperimentSchema,
-  chemistry: ChemistryExperimentSchema,
-  crypto: CryptoExperimentSchema,
-};
-
-export type LabType = keyof typeof LabSchemas;
-
+/**
+ * Utility to safely coerce timestamps into JS Date for analytics.
+ */
+export function coerceDate(input?: number | Date): Date | undefined {
+  if (input == null) return undefined;
+  if (input instanceof Date) return input;
+  return new Date(input);
+}

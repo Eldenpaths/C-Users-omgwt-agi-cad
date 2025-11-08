@@ -59,6 +59,12 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           <span className="text-sm">Governor Audit</span>
         </button>
         <button
+          onClick={() => (window.location.href = '/governor/analytics')}
+          className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+        >
+          <span className="text-sm">Governor Analytics</span>
+        </button>
+        <button
           onClick={() => (window.location.href = '/dashboard#thread')}
           className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
         >

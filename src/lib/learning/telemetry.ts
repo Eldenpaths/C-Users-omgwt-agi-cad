@@ -1,38 +1,46 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getDbInstance } from '@/lib/firebase/client';
-
-export interface TelemetryEvent {
-  userId: string;
-  agentId?: string;
-  labType?: 'plasma' | 'spectral' | 'chemistry' | 'crypto' | string;
-  event: string;
-  timestamp?: number; // client-provided optional epoch ms
-  meta?: Record<string, unknown>;
-}
-
 /**
- * Telemetry logger for user + agent events. Writes to Firestore `telemetry`.
+ * Learning Infrastructure Core — Telemetry
+ *
+ * Simple Firestore-backed telemetry logger for user/agent/lab events.
+ * Usage: await Telemetry.logEvent({ userId, agentId, labType, event })
  */
+
+import { collection, addDoc, serverTimestamp, CollectionReference, Firestore } from 'firebase/firestore';
+import { getFirestoreInstance } from '@/lib/firebase';
+
+export type TelemetryEvent = {
+  userId: string;
+  agentId: string;
+  labType: string;
+  event: string;
+  timestamp?: Date;
+  runId?: string;
+  meta?: Record<string, any>;
+};
+
 export class Telemetry {
+  /** Firestore collection name */
+  static collectionName = 'telemetry';
+
+  /** Internal collection reference builder */
+  private static collectionRef(db: Firestore): CollectionReference {
+    return collection(db, Telemetry.collectionName) as CollectionReference;
+  }
+
   /**
-   * Logs a telemetry event. Safe to call on client; no-op during SSR if Firestore is not available.
+   * Log a telemetry event to Firestore.
+   * Adds serverTimestamp if no timestamp is provided.
    */
-  static async logEvent(event: TelemetryEvent): Promise<void> {
-    try {
-      const db = getDbInstance();
-      if (!db) return; // SSR/build path: skip
-      const payload = {
-        ...event,
-        timestamp: event.timestamp ?? Date.now(),
-        createdAt: serverTimestamp(),
-      };
-      await addDoc(collection(db, 'telemetry'), payload);
-    } catch (err) {
-      // Swallow to avoid runtime breaks; surface in console for debugging
-      console.warn('[Telemetry.logEvent] failed:', err);
-    }
+  static async logEvent(eventData: TelemetryEvent): Promise<string> {
+    const db = getFirestoreInstance();
+    if (!db) throw new Error('Firestore is not available on server-side context.');
+
+    const payload = {
+      ...eventData,
+      timestamp: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(Telemetry.collectionRef(db), payload);
+    return docRef.id;
   }
 }
-
-export default Telemetry;
-

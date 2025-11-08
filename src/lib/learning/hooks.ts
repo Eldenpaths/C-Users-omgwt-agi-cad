@@ -1,89 +1,112 @@
-import { useEffect, useState } from 'react';
-import { collection, onSnapshot, orderBy, query, where, limit } from 'firebase/firestore';
-import { getDbInstance } from '@/lib/firebase/client';
+/**
+ * Learning Infrastructure Core — React Hooks
+ *
+ * Real-time Firestore hooks for learning sessions and telemetry streams.
+ */
 
-export interface LearningSessionDoc {
-  experimentId: string;
+import { useEffect, useMemo, useState } from 'react';
+import { collection, onSnapshot, orderBy, query, where, Firestore, DocumentData } from 'firebase/firestore';
+import { getFirestoreInstance } from '@/lib/firebase';
+
+export type LearningSession = {
+  id: string;
   userId: string;
   agentId: string;
   labType: string;
-  timestamp: number;
-  runtimeMs?: number;
+  runId?: string;
   success?: boolean;
-  summary?: string;
-}
-
-export interface TelemetryDoc {
-  userId: string;
-  agentId?: string;
-  labType?: string;
-  event: string;
-  timestamp: number;
+  runtimeMs?: number;
   createdAt?: any;
-}
+  [k: string]: any;
+};
+
+export type TelemetryRecord = {
+  id: string;
+  userId: string;
+  agentId: string;
+  labType: string;
+  event: string;
+  timestamp?: any;
+  runId?: string;
+  [k: string]: any;
+};
 
 /**
- * Subscribe to a user's learning_sessions in real-time.
+ * Subscribe to learning sessions for a user.
  */
 export function useLearningSessions(userId?: string) {
-  const [sessions, setSessions] = useState<LearningSessionDoc[]>([]);
+  const db = getFirestoreInstance();
+  const [data, setData] = useState<LearningSession[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const qRef = useMemo(() => {
+    if (!db) return null;
+    let col = collection(db, 'learning_sessions');
+    const clauses = [] as any[];
+    if (userId) clauses.push(where('userId', '==', userId));
+    const qy = query(col, ...clauses, orderBy('createdAt', 'desc'));
+    return qy;
+  }, [db, userId]);
 
   useEffect(() => {
-    const db = getDbInstance();
-    if (!db || !userId) {
-      setSessions([]);
-      setLoading(false);
-      return;
-    }
+    if (!qRef) return;
     setLoading(true);
-    const q = query(
-      collection(db, 'learning_sessions'),
-      where('userId', '==', userId),
-      orderBy('timestamp', 'desc'),
+    const unsub = onSnapshot(
+      qRef,
+      (snap) => {
+        const rows: LearningSession[] = [];
+        snap.forEach((doc) => rows.push({ id: doc.id, ...(doc.data() as DocumentData) }));
+        setData(rows);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err as Error);
+        setLoading(false);
+      }
     );
-    const unsub = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map((d) => d.data() as LearningSessionDoc);
-      setSessions(rows);
-      setLoading(false);
-    });
     return () => unsub();
-  }, [userId]);
+  }, [qRef]);
 
-  return { sessions, loading };
+  return { data, loading, error };
 }
 
 /**
- * Live telemetry feed for a specific agent.
+ * Subscribe to telemetry events for an agent.
  */
-export function useTelemetryFeed(agentId?: string, max = 100) {
-  const [events, setEvents] = useState<TelemetryDoc[]>([]);
+export function useTelemetryFeed(agentId?: string) {
+  const db = getFirestoreInstance();
+  const [data, setData] = useState<TelemetryRecord[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const qRef = useMemo(() => {
+    if (!db) return null;
+    let col = collection(db, 'telemetry');
+    const clauses = [] as any[];
+    if (agentId) clauses.push(where('agentId', '==', agentId));
+    const qy = query(col, ...clauses, orderBy('timestamp', 'desc'));
+    return qy;
+  }, [db, agentId]);
 
   useEffect(() => {
-    const db = getDbInstance();
-    if (!db || !agentId) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
+    if (!qRef) return;
     setLoading(true);
-    const q = query(
-      collection(db, 'telemetry'),
-      where('agentId', '==', agentId),
-      orderBy('timestamp', 'desc'),
-      limit(max),
+    const unsub = onSnapshot(
+      qRef,
+      (snap) => {
+        const rows: TelemetryRecord[] = [];
+        snap.forEach((doc) => rows.push({ id: doc.id, ...(doc.data() as DocumentData) }));
+        setData(rows);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err as Error);
+        setLoading(false);
+      }
     );
-    const unsub = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map((d) => d.data() as TelemetryDoc);
-      setEvents(rows);
-      setLoading(false);
-    });
     return () => unsub();
-  }, [agentId, max]);
+  }, [qRef]);
 
-  return { events, loading };
+  return { data, loading, error };
 }
-
-export default { useLearningSessions, useTelemetryFeed };
-

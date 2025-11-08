@@ -1,0 +1,71 @@
+# AGI-CAD Session Summary
+
+- Time: 2025-11-08T04:37:25.630Z
+- Branch: v29d-governor-integration
+- HEAD: a924868
+- Since: v29.1-glyphcore-link (last tag)
+
+## Files Changed
+Added: 26, Modified: 23, Deleted: 0
+- [A] .agi-cad/thread-config.json
+- [A] Vault/phase-header.md
+- [A] docs/Operator-Manual-Phase27B.md
+- [A] docs/Operator-Manual-Phase27C.md
+- [A] docs/Operator-Manual-Phase27D.md
+- [A] docs/checkpoints/phase27E.md.bak
+- [A] logs/notifications.json
+- [A] logs/thread-shifts.log
+- [A] logs/thread-state.json
+- [A] logs/thread-status.json
+- [A] scripts/thread-scheduler.ts
+- [A] src/agents/evolutionProcess.ts
+- [A] src/app/api/thread/notifications/route.ts
+- [A] src/app/api/thread/status/route.ts
+- [A] src/app/governor/audit/page.tsx
+- [A] src/components/LearningPanel.tsx
+- [A] src/components/ThreadHealth.tsx
+- [A] src/core/semanticGovernor.ts
+- [A] src/lib/glyphcore/visualHybrid.ts
+- [A] src/lib/learning/serverCore.ts
+- [A] src/lib/router/evolutionHistory.ts
+- [A] src/pages/api/router/evolution/history.ts
+- [A] src/pages/api/router/evolution/preview.ts
+- [A] src/pages/api/router/evolution/revert.ts
+- [A] src/pages/api/router/evolve.ts
+- [A] src/types/sharp.d.ts
+- [M] package.json
+- [M] pnpm-lock.yaml
+- [M] scripts/test-router-26a.ts
+- [M] src/app/dashboard/page.jsx
+- [M] src/components/ProfileTrend.tsx
+- [M] src/components/RouterPanel.tsx
+- [M] src/components/Topbar.tsx
+- [M] src/components/glyph/GlyphCoreConsole.tsx
+- [M] src/core/router/IntelligenceRouter.ts
+- [M] src/lib/firebase/server.ts
+- [M] src/lib/firebaseAdmin.ts
+- [M] src/lib/learning/analyzer.ts
+- [M] src/lib/learning/hooks.ts
+- [M] src/lib/learning/index.ts
+- [M] src/lib/learning/learningCore.ts
+- [M] src/lib/learning/telemetry.ts
+- [M] src/lib/learning/validator.ts
+- [M] src/lib/simulation/core.ts
+- [M] src/pages/api/glyph/ingest.ts
+- [M] src/pages/api/learning/ingest.ts
+- [M] src/pages/api/trading/panic-flat.ts
+- [M] tsconfig.json
+- [M] tsconfig.tsbuildinfo
+
+## API Routes Changed
+- M /api/glyph/ingest (src/pages/api/glyph/ingest.ts)
+- M /api/learning/ingest (src/pages/api/learning/ingest.ts)
+- A /api/router/evolution/history (src/pages/api/router/evolution/history.ts)
+- A /api/router/evolution/preview (src/pages/api/router/evolution/preview.ts)
+- A /api/router/evolution/revert (src/pages/api/router/evolution/revert.ts)
+- A /api/router/evolve (src/pages/api/router/evolve.ts)
+- M /api/trading/panic-flat (src/pages/api/trading/panic-flat.ts)
+
+## UI Pages Changed
+- M /dashboard (src/app/dashboard/page.jsx)
+- A /governor/audit (src/app/governor/audit/page.tsx)

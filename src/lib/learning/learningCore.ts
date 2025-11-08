@@ -1,86 +1,154 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getDbInstance } from '@/lib/firebase/client';
-import { validateExperiment, AnyExperiment } from './validator';
-import Telemetry from './telemetry';
-
 /**
- * Configuration for LearningCore.
+ * Learning Infrastructure Core — LearningCore
+ *
+ * Orchestrates validation, telemetry, Firestore persistence and optional
+ * embedding generation for experiment sessions.
  */
-export interface LearningCoreOptions {}
 
-/**
- * Result returned after ingesting an experiment.
- */
-export interface IngestResult {
-  docId: string;
-  embedded: boolean;
-}
+import { collection, addDoc, serverTimestamp, Firestore, CollectionReference } from 'firebase/firestore';
+import { getFirestoreInstance } from '@/lib/firebase';
+import { validateExperiment, AnyExperiment, LabType } from './validator';
+import { Telemetry } from './telemetry';
 
-/**
- * Utility: exponential backoff with jitter.
- */
-async function withRetry<T>(fn: () => Promise<T>, opts?: { retries?: number; baseMs?: number; maxMs?: number }): Promise<T> {
-  const retries = opts?.retries ?? 5;
-  const baseMs = opts?.baseMs ?? 150;
-  const maxMs = opts?.maxMs ?? 2000;
+/** Optional embedding integration types (LangChain + Pinecone) */
+export type EmbeddingProvider = {
+  /** Generates an embedding vector for input text */
+  embed(text: string): Promise<number[]>;
+};
 
-  let lastErr: unknown = null;
-  for (let i = 0; i <= retries; i++) {
+export type VectorIndex = {
+  /** Upsert a single (id, vector, metadata) */
+  upsert(id: string, vector: number[], metadata?: Record<string, any>): Promise<void>;
+};
+
+export type LearningCoreOptions = {
+  db?: Firestore;
+  /** If provided, LearningCore will generate an embedding per session summary */
+  embeddingProvider?: EmbeddingProvider | null;
+  /** Optional vector index (Pinecone or compatible) */
+  vectorIndex?: VectorIndex | null;
+  /** Namespace/collection name for sessions */
+  collectionName?: string; // default: learning_sessions
+  /** Max retries for writes */
+  maxRetries?: number; // default: 3
+};
+
+/** A persisted session doc shape */
+export type LearningSessionRecord = AnyExperiment & {
+  createdAt: any;
+  summary?: string;
+  embeddingId?: string;
+  embeddingDim?: number;
+};
+
+function delay(ms: number) { return new Promise((res) => setTimeout(res, ms)); }
+
+async function withExponentialRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let attempt = 0;
+  let lastErr: any;
+  while (attempt <= maxRetries) {
     try {
       return await fn();
     } catch (err) {
       lastErr = err;
-      if (i === retries) break;
-      const delay = Math.min(maxMs, baseMs * Math.pow(2, i)) * (0.75 + Math.random() * 0.5);
-      await new Promise((r) => setTimeout(r, delay));
+      const backoff = Math.min(1000 * Math.pow(2, attempt), 10_000);
+      await delay(backoff);
+      attempt += 1;
     }
   }
-  throw lastErr ?? new Error('withRetry failed');
+  throw lastErr;
 }
 
-/**
- * LearningCore coordinates validation, telemetry, persistence to Firestore,
- * and optional Pinecone embeddings for experiment summaries.
- */
 export class LearningCore {
-  constructor(_options: LearningCoreOptions = {}) {}
+  private db: Firestore;
+  private sessionsCol: CollectionReference;
+  private embed?: EmbeddingProvider | null;
+  private index?: VectorIndex | null;
+  private maxRetries: number;
+
+  constructor(opts?: LearningCoreOptions) {
+    this.db = opts?.db ?? getFirestoreInstance();
+    if (!this.db) throw new Error('Firestore is not available in this context.');
+
+    this.sessionsCol = collection(this.db, opts?.collectionName ?? 'learning_sessions') as CollectionReference;
+    this.embed = opts?.embeddingProvider ?? null;
+    this.index = opts?.vectorIndex ?? null;
+    this.maxRetries = opts?.maxRetries ?? 3;
+  }
 
   /**
-   * Ingest a raw experiment payload. Validates the data, logs telemetry,
-   * persists to Firestore `learning_sessions`, and attempts to embed the
-   * summary to Pinecone (server-side only, when configured).
+   * Ingests raw experiment payload:
+   * - Validates against Zod schemas
+   * - Logs telemetry (received, validated, persisted)
+   * - Persists to Firestore with server timestamp
+   * - Optionally generates embeddings and upserts to vector index
    */
-  async ingest(labType: AnyExperiment['labType'], data: unknown): Promise<IngestResult> {
-    // 1) Validate
-    const exp = validateExperiment(labType, data);
-
-    // 2) Telemetry
+  async ingest(labType: LabType, rawData: unknown, options?: { summary?: string }): Promise<string> {
+    // Log receipt
     await Telemetry.logEvent({
-      userId: exp.userId,
-      agentId: exp.agentId,
-      labType: exp.labType,
-      event: 'experiment_ingest',
-      timestamp: exp.timestamp,
-      meta: { experimentId: exp.experimentId, success: exp.success },
+      userId: (rawData as any)?.userId ?? 'unknown',
+      agentId: (rawData as any)?.agentId ?? 'unknown',
+      labType,
+      event: 'experiment.received',
+      runId: (rawData as any)?.runId,
     });
 
-    // 3) Persist
-    const docId = await this.writeToFirestore(exp);
+    // Validate
+    const validated = validateExperiment(labType, rawData) as AnyExperiment;
 
-    // Client-side LearningCore does not do embeddings; server handles that.
-    return { docId, embedded: false };
-  }
+    await Telemetry.logEvent({
+      userId: validated.userId,
+      agentId: validated.agentId,
+      labType,
+      event: 'experiment.validated',
+      runId: validated.runId,
+    });
 
-  /**
-   * Firestore write with retry. Collection: `learning_sessions`.
-   */
-  private async writeToFirestore(exp: AnyExperiment): Promise<string> {
-    const db = getDbInstance();
-    if (!db) throw new Error('Firestore client not available');
-    const payload = { ...exp, createdAt: serverTimestamp() } as any;
-    const ref = await withRetry(async () => addDoc(collection(db, 'learning_sessions'), payload));
-    return ref.id;
+    // Prepare record
+    const record: LearningSessionRecord = {
+      ...validated,
+      createdAt: serverTimestamp(),
+      summary: options?.summary,
+    };
+
+    // Persist with retry
+    const docRef = await withExponentialRetry(
+      () => addDoc(this.sessionsCol, record),
+      this.maxRetries,
+    );
+
+    // Optionally embed and index
+    if (this.embed && this.index && options?.summary) {
+      try {
+        const vector = await this.embed.embed(options.summary);
+        await this.index.upsert(docRef.id, vector, {
+          labType,
+          userId: validated.userId,
+          agentId: validated.agentId,
+          runId: validated.runId,
+        });
+      } catch (err) {
+        // Non-fatal; log telemetry and continue
+        await Telemetry.logEvent({
+          userId: validated.userId,
+          agentId: validated.agentId,
+          labType,
+          event: 'embedding.error',
+          runId: validated.runId,
+          meta: { error: (err as Error).message },
+        });
+      }
+    }
+
+    // Log success
+    await Telemetry.logEvent({
+      userId: validated.userId,
+      agentId: validated.agentId,
+      labType,
+      event: 'experiment.persisted',
+      runId: validated.runId,
+    });
+
+    return docRef.id;
   }
 }
-
-export default LearningCore;

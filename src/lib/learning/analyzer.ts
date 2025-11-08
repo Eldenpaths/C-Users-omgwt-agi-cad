@@ -1,167 +1,124 @@
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { getDbInstance } from '@/lib/firebase/client';
+/**
+ * Learning Infrastructure Core — Analyzer
+ *
+ * Pulls past experiments and telemetry to compute aggregate metrics
+ * such as success rate, average runtime, and error frequency.
+ * Future-ready: placeholders for ML/LLM suggestions.
+ */
 
-export interface AnalyticsFilters {
+import { collection, getDocs, query, where, orderBy, limit, Firestore, Timestamp } from 'firebase/firestore';
+import { getFirestoreInstance } from '@/lib/firebase';
+
+export type LearningAnalyticsSummary = {
   userId?: string;
   agentId?: string;
-}
-
-export interface LabMetrics {
-  count: number;
+  totalSessions: number;
   successRate: number; // 0..1
-  avgRuntimeMs: number; // 0 if none
-  errorRate: number; // 0..1
-}
-
-export interface AnalyticsSummary {
-  total: number;
-  overallSuccessRate: number; // 0..1
-  overallAvgRuntimeMs: number;
-  labs: Record<string, LabMetrics>;
-  recentEvents: number; // telemetry count observed
-  generatedAt: number; // epoch ms
-}
-
-type Session = {
-  labType: string;
-  success?: boolean;
-  runtimeMs?: number;
+  averageRuntimeMs: number;
+  errorFrequency: number; // errors per session
+  byLab: Record<string, {
+    total: number;
+    successRate: number;
+    averageRuntimeMs: number;
+  }>;
+  lastUpdated: string;
+  suggestions?: string[]; // Future: LLM/ML suggestions
 };
 
-/**
- * Pulls learning_sessions and telemetry to compute aggregate metrics for dashboard.
- */
-export async function analyzeLearning(filters: AnalyticsFilters = {}): Promise<AnalyticsSummary> {
-  const db = getDbInstance();
-  if (!db) {
-    // SSR/build path safety fallback
-    return { total: 0, overallSuccessRate: 0, overallAvgRuntimeMs: 0, labs: {}, recentEvents: 0, generatedAt: Date.now() };
+function numberOr<T>(n: T | undefined, fallback: T): T {
+  return (n == null ? fallback : n);
+}
+
+export class Analyzer {
+  private db: Firestore;
+
+  constructor(db?: Firestore) {
+    this.db = db ?? getFirestoreInstance();
   }
 
-  const sessions = await fetchLearningSessions(db, filters);
-  const telemetryCount = await countTelemetry(db, filters);
+  /**
+   * Load learning_sessions and telemetry for basic analytics.
+   * Optional filters by userId/agentId.
+   */
+  async getSummary(filters?: { userId?: string; agentId?: string }): Promise<LearningAnalyticsSummary> {
+    if (!this.db) throw new Error('Firestore is not available in this context.');
 
-  const total = sessions.length;
-  let successCount = 0;
-  let runtimeSum = 0;
-  const byLab = new Map<string, { count: number; success: number; runtimeSum: number; errors: number }>();
+    // Pull sessions
+    const sessionsCol = collection(this.db, 'learning_sessions');
+    const sessionsQ = query(
+      sessionsCol,
+      ...(filters?.userId ? [where('userId', '==', filters.userId)] : []),
+      ...(filters?.agentId ? [where('agentId', '==', filters.agentId)] : []),
+      orderBy('createdAt', 'desc'),
+      limit(2000)
+    );
+    const sessionsSnap = await getDocs(sessionsQ);
 
-  for (const s of sessions) {
-    const success = !!s.success;
-    const runtime = s.runtimeMs ?? 0;
-    successCount += success ? 1 : 0;
-    runtimeSum += runtime;
+    let total = 0;
+    let successes = 0;
+    let runtimeSum = 0;
+    const perLab: Record<string, { total: number; success: number; runtimeSum: number }> = {};
 
-    const k = s.labType;
-    const agg = byLab.get(k) ?? { count: 0, success: 0, runtimeSum: 0, errors: 0 };
-    agg.count += 1;
-    agg.success += success ? 1 : 0;
-    agg.runtimeSum += runtime;
-    agg.errors += success ? 0 : 1;
-    byLab.set(k, agg);
-  }
+    sessionsSnap.forEach((doc) => {
+      total += 1;
+      const d = doc.data() || {};
+      const lab: string = d.labType ?? 'unknown';
+      const success: boolean = !!d.success;
+      const runtime = numberOr<number>(d.runtimeMs, 0);
 
-  const labs: Record<string, LabMetrics> = {};
-  byLab.forEach((agg, lab) => {
-    labs[lab] = {
-      count: agg.count,
-      successRate: agg.count ? agg.success / agg.count : 0,
-      avgRuntimeMs: agg.count ? Math.round(agg.runtimeSum / agg.count) : 0,
-      errorRate: agg.count ? agg.errors / agg.count : 0,
+      if (!perLab[lab]) perLab[lab] = { total: 0, success: 0, runtimeSum: 0 };
+      perLab[lab].total += 1;
+      perLab[lab].runtimeSum += runtime;
+      if (success) {
+        successes += 1;
+        perLab[lab].success += 1;
+      }
+      runtimeSum += runtime;
+    });
+
+    // Pull telemetry for basic error frequency
+    const telemetryCol = collection(this.db, 'telemetry');
+    const teleQ = query(
+      telemetryCol,
+      ...(filters?.userId ? [where('userId', '==', filters.userId)] : []),
+      ...(filters?.agentId ? [where('agentId', '==', filters.agentId)] : []),
+      orderBy('timestamp', 'desc'),
+      limit(5000)
+    );
+    const teleSnap = await getDocs(teleQ);
+    let errorEvents = 0;
+    teleSnap.forEach((doc) => {
+      const ev = (doc.data()?.event as string) || '';
+      if (/error|fail|exception/i.test(ev)) errorEvents += 1;
+    });
+
+    const successRate = total ? successes / total : 0;
+    const avgRuntime = total ? runtimeSum / total : 0;
+
+    const byLab: LearningAnalyticsSummary['byLab'] = {};
+    Object.entries(perLab).forEach(([lab, stats]) => {
+      byLab[lab] = {
+        total: stats.total,
+        successRate: stats.total ? stats.success / stats.total : 0,
+        averageRuntimeMs: stats.total ? stats.runtimeSum / stats.total : 0,
+      };
+    });
+
+    // Placeholder: future ML/LLM insights
+    const suggestions: string[] = [];
+    if (avgRuntime > 60_000) suggestions.push('Consider batching or memoization to reduce runtime.');
+    if (successRate < 0.4) suggestions.push('Tune hyperparameters or add validation gates for inputs.');
+
+    return {
+      userId: filters?.userId,
+      agentId: filters?.agentId,
+      totalSessions: total,
+      successRate,
+      averageRuntimeMs: avgRuntime,
+      errorFrequency: total ? errorEvents / total : 0,
+      byLab,
+      lastUpdated: new Date().toISOString(),
+      suggestions,
     };
-  });
-
-  return {
-    total,
-    overallSuccessRate: total ? successCount / total : 0,
-    overallAvgRuntimeMs: total ? Math.round(runtimeSum / total) : 0,
-    labs,
-    recentEvents: telemetryCount,
-    generatedAt: Date.now(),
-  };
-}
-
-async function fetchLearningSessions(db: any, filters: AnalyticsFilters): Promise<Session[]> {
-  const qParts: any[] = [];
-  if (filters.userId) qParts.push(where('userId', '==', filters.userId));
-  if (filters.agentId) qParts.push(where('agentId', '==', filters.agentId));
-  const qRef = qParts.length ? query(collection(db, 'learning_sessions'), ...qParts) : collection(db, 'learning_sessions');
-  const snap = await getDocs(qRef as any);
-  return snap.docs.map((d) => d.data() as Session);
-}
-
-async function countTelemetry(db: any, filters: AnalyticsFilters): Promise<number> {
-  const qParts: any[] = [];
-  if (filters.userId) qParts.push(where('userId', '==', filters.userId));
-  if (filters.agentId) qParts.push(where('agentId', '==', filters.agentId));
-  const qRef = qParts.length
-    ? query(collection(db, 'telemetry'), ...qParts, orderBy('timestamp', 'desc'))
-    : query(collection(db, 'telemetry'), orderBy('timestamp', 'desc'));
-  const snap = await getDocs(qRef as any);
-  return snap.size;
-}
-
-export default analyzeLearning;
-
-// ---- Time-windowed trends ----
-
-export interface TrendWindowResult {
-  windowDays: number;
-  total: number;
-  successRate: number; // 0..1
-  avgRuntimeMs: number;
-  delta: {
-    total: number; // current - previous
-    successRate: number; // current - previous
-    avgRuntimeMs: number; // current - previous
-  };
-}
-
-export async function analyzeLearningTrends({ userId, windowDays = 7 }: { userId?: string; windowDays?: number }): Promise<TrendWindowResult> {
-  const db = getDbInstance();
-  if (!db) {
-    return { windowDays, total: 0, successRate: 0, avgRuntimeMs: 0, delta: { total: 0, successRate: 0, avgRuntimeMs: 0 } };
   }
-
-  const now = Date.now();
-  const ms = 24 * 60 * 60 * 1000;
-  const start = now - windowDays * ms;
-  const prevStart = start - windowDays * ms;
-
-  const curr = await fetchWindow(db, userId, start, now);
-  const prev = await fetchWindow(db, userId, prevStart, start);
-
-  const currAgg = aggregate(curr);
-  const prevAgg = aggregate(prev);
-
-  return {
-    windowDays,
-    total: currAgg.total,
-    successRate: currAgg.successRate,
-    avgRuntimeMs: currAgg.avgRuntimeMs,
-    delta: {
-      total: currAgg.total - prevAgg.total,
-      successRate: currAgg.successRate - prevAgg.successRate,
-      avgRuntimeMs: currAgg.avgRuntimeMs - prevAgg.avgRuntimeMs,
-    },
-  };
-}
-
-async function fetchWindow(db: any, userId: string | undefined, start: number, end: number) {
-  const qParts: any[] = [where('timestamp', '>=', start), where('timestamp', '<', end)];
-  if (userId) qParts.push(where('userId', '==', userId));
-  const qRef = query(collection(db, 'learning_sessions'), ...qParts);
-  const snap = await getDocs(qRef as any);
-  return snap.docs.map((d) => d.data() as Session);
-}
-
-function aggregate(rows: Session[]) {
-  const total = rows.length;
-  const succ = rows.reduce((s, r) => s + (r.success ? 1 : 0), 0);
-  const runtimeSum = rows.reduce((s, r) => s + (r.runtimeMs ?? 0), 0);
-  return {
-    total,
-    successRate: total ? succ / total : 0,
-    avgRuntimeMs: total ? Math.round(runtimeSum / total) : 0,
-  };
 }

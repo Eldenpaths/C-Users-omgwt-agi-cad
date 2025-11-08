@@ -1,4 +1,6 @@
 import { Telemetry } from '@/lib/learning/telemetry';
+import type { TaskContext } from '@/lib/neuroevolution/tasks';
+import type { MultiObjectiveAgent } from '@/lib/neuroevolution/agent';
 import SimulationScheduler from './scheduler';
 import type { LabId, SimulationAdapter, SimulationEvent, SimulationState } from './types';
 import { plasmaAdapter } from './adapters/plasmaAdapter';
@@ -18,6 +20,11 @@ export class SimulationCore {
   private scheduler: SimulationScheduler | null = null;
   private userId?: string;
   private agentId?: string;
+
+  // Simple event emitter (neuroevolution bridge)
+  private ee = new Map<string, Set<(payload: any) => void>>();
+  // Optional task bindings per lab: used to emit task:completed + tick events with metrics
+  private taskBindings = new Map<LabId, { task: TaskContext; agent: MultiObjectiveAgent; generation: number }>();
 
   constructor() {
     // Register built-in adapters
@@ -41,6 +48,28 @@ export class SimulationCore {
   /** Get current state for a lab. */
   getState(labId: LabId): SimulationState | undefined {
     return this.states.get(labId);
+  }
+
+  /** Bind a task context and agent to a lab to enable task:completed emissions. */
+  bindTask(labId: LabId, binding: { task: TaskContext; agent: MultiObjectiveAgent; generation?: number }) {
+    this.taskBindings.set(labId, { ...binding, generation: binding.generation ?? 0 })
+  }
+
+  /** Generic event registration (for neuro hooks). */
+  on(event: string, handler: (payload: any) => void) {
+    if (!this.ee.has(event)) this.ee.set(event, new Set())
+    this.ee.get(event)!.add(handler)
+  }
+  off(event: string, handler: (payload: any) => void) {
+    if (!this.ee.has(event)) return
+    this.ee.get(event)!.delete(handler)
+  }
+  private emitGeneric(event: string, payload: any) {
+    const set = this.ee.get(event)
+    if (!set) return
+    set.forEach((fn) => {
+      try { fn(payload) } catch (e) { console.warn('[SimulationCore] generic listener error:', (e as Error).message) }
+    })
   }
 
   /** Subscribe to events for a lab. */
@@ -108,7 +137,45 @@ export class SimulationCore {
       const next = adapter.simulateStep(cur, dt);
       this.states.set(labId, next);
       this.emit({ type: 'step', labId, state: next, frame });
+
+      // Neuroevolution bridge: emit tick with metrics; emit task:completed when done
+      const binding = this.taskBindings.get(labId)
+      if (binding) {
+        const metrics = this.deriveMetrics(next)
+        const payload = {
+          agentId: this.agentId || 'agent',
+          task: binding.task,
+          generation: binding.generation,
+          agent: binding.agent,
+          metrics,
+          done: this.isTaskDone(binding.task, next, metrics),
+        }
+        // tick event for onSimulationTick()
+        this.emitGeneric('tick', payload)
+        if (payload.done) {
+          this.emitGeneric('task:completed', payload)
+          // reset timer and bump generation
+          const reset: SimulationState = { ...next, timeMs: 0 }
+          this.states.set(labId, reset)
+          binding.generation += 1
+          this.taskBindings.set(labId, binding)
+        }
+      }
     });
+  }
+
+  /** Basic metric derivation; adapters may encode accuracy/energy in values. */
+  private deriveMetrics(state: SimulationState) {
+    const timeMs = state.timeMs
+    const accuracy = typeof state.values.accuracy === 'number' ? state.values.accuracy : 0.5 + 0.5 * Math.tanh((state.values.yieldPercent ?? 0) / 100)
+    const energy = typeof state.values.energy === 'number' ? state.values.energy : (state.values.power ?? 0)
+    return { timeMs, accuracy, energy }
+  }
+
+  /** Determine completion: prefer task.constraints.timeDeadlineMs if present, else 5s. */
+  private isTaskDone(task: TaskContext, state: SimulationState, metrics: { timeMs: number }) {
+    const deadline = task.constraints.timeDeadlineMs ?? 5000
+    return metrics.timeMs >= deadline
   }
 }
 

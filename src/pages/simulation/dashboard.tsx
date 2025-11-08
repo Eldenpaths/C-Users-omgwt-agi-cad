@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { GetServerSideProps } from 'next';
+import { requireAuth } from '@/lib/auth/ssr';
 import { useSimulation } from '@/lib/simulation/hooks';
 import type { LabId } from '@/lib/simulation/types';
 import { getAuthInstance } from '@/lib/firebase/client';
@@ -39,6 +41,10 @@ export default function SimulationDashboard() {
       <SimulationDashboardContent />
     </ErrorBoundary>
   );
+}
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  return requireAuth(ctx)
 }
 
 function LabPanel({ labId, userId }: { labId: LabId; userId?: string }) {
@@ -171,4 +177,3 @@ function Chart({ data, width = 600, height = 120, color = '#22d3ee' }: { data: n
     </svg>
   );
 }
-
