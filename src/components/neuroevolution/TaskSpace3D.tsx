@@ -39,6 +39,7 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
   const [autoScale, setAutoScale] = React.useState(true)
   const [minRange, setMinRange] = React.useState(0)
   const [maxRange, setMaxRange] = React.useState(1)
+  const [resolution, setResolution] = React.useState<256 | 512 | 1024>(512)
   const [customStart, setCustomStart] = React.useState('#0a34cc')
   const [customEnd, setCustomEnd] = React.useState('#e21d19')
   const [customStops, setCustomStops] = React.useState<Array<{ pos: number; color: string }>>([
@@ -68,6 +69,7 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
         if (typeof ui.showVectors === 'boolean') setShowVectors(ui.showVectors)
         if (typeof ui.showField === 'boolean') setShowField(ui.showField)
         if (typeof ui.showEditor === 'boolean') setShowEditor(ui.showEditor)
+        if (ui.resolution === 256 || ui.resolution === 512 || ui.resolution === 1024) setResolution(ui.resolution)
         if (typeof ui.useWebGpuRender === 'boolean') setUseWebGpuRender(ui.useWebGpuRender)
       }
       const raw = localStorage.getItem('neuro-heatmap-custom')
@@ -95,10 +97,10 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
   React.useEffect(() => {
     try {
       localStorage.setItem('neuro-heatmap-ui', JSON.stringify({
-        metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender,
+        metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender, resolution,
       }))
     } catch {}
-  }, [metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender])
+  }, [metricMode, palette, autoScale, minRange, maxRange, showHeat, showVectors, showField, showEditor, useWebGpuRender, resolution])
 
   React.useEffect(() => {
     const ws = connectMetricsSocket((msg: MetricsMessage) => {
@@ -127,6 +129,16 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
           <label className="inline-flex items-center gap-1"><input type="checkbox" checked={showVectors} onChange={(e) => setShowVectors(e.target.checked)} /> Vectors</label>
           <label className="inline-flex items-center gap-1"><input type="checkbox" checked={showField} onChange={(e) => setShowField(e.target.checked)} /> Field</label>
           <label className="inline-flex items-center gap-1"><input type="checkbox" checked={useWebGpuRender} onChange={(e) => setUseWebGpuRender(e.target.checked)} /> Use WebGPU Render</label>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-400">Resolution:</span>
+          <select className="bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5"
+                  value={resolution}
+                  onChange={(e) => setResolution(parseInt(e.target.value, 10) as 256 | 512 | 1024)}>
+            <option value={256}>256</option>
+            <option value={512}>512</option>
+            <option value={1024}>1024</option>
+          </select>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-zinc-400">Metric:</span>
@@ -200,13 +212,13 @@ export default function TaskSpace3D({ agentId = 'demo-agent' }: { agentId?: stri
               metricMode={metricMode as any}
               minRange={minRange}
               maxRange={maxRange}
-              size={512}
+              size={resolution}
             />
           </div>
         ) : (
           <Canvas camera={{ position: [1.5, 1.2, 1.5] }}>
             {/* Prefer WebGPU compute if available; otherwise WebGL fallback density splats */}
-            <WebGPUComputeDensity points={Object.values(points)} onTextures={(d, g) => { setDensityTex(d); setGradientTex(g) }} size={512} />
+            <WebGPUComputeDensity points={Object.values(points)} onTextures={(d, g) => { setDensityTex(d); setGradientTex(g) }} size={resolution} />
             {!densityTex && <DensityCompute points={Object.values(points)} onTexture={setDensityTex} />}
             <ambientLight intensity={0.6} />
             <pointLight position={[3, 3, 3]} />

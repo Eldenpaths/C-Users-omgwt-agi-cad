@@ -30,6 +30,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
     let vectorPipeline: GPURenderPipeline | null = null
     const [fps, setFps] = [React.useRef(0), React.useRef(0)] as any
     const lastFrameRef = React.useRef<number>(performance.now())
+    const wgpsRef = React.useRef<number>(0)
     let sampler: GPUSampler | null = null
     let lutTex: GPUTexture | null = null
     let pointsBuf: GPUBuffer | null = null
@@ -397,6 +398,10 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
         const instFps = dt > 0 ? 1000 / dt : 0
         // simple low-pass filter
         fps.current = fps.current * 0.9 + instFps * 0.1
+        // Approx workgroups per second: density (8x8), gradient (16x16)
+        const wgDensity = Math.ceil(size/8) * Math.ceil(size/8)
+        const wgGradient = Math.ceil(size/16) * Math.ceil(size/16)
+        wgpsRef.current = (wgDensity + wgGradient) * fps.current
         rafRef.current = requestAnimationFrame(frame)
       }
       frame()
@@ -438,8 +443,10 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
   return (
     <div className="relative w-full h-[320px]">
       <canvas ref={canvasRef} className="w-full h-full block" />
-      <div className="absolute top-1 right-1 text-[10px] px-2 py-1 bg-black/50 border border-white/10 rounded">
-        FPS: {Math.round((fps as any).current || 0)}
+      <div className="absolute top-1 right-1 text-[10px] px-2 py-1 bg-black/50 border border-white/10 rounded space-y-0.5 text-white">
+        <div>FPS: {Math.round((fps as any).current || 0)}</div>
+        <div>Res: {size}²</div>
+        <div>WG/s: {Math.round((wgpsRef as any).current || 0)}</div>
       </div>
     </div>
   )
