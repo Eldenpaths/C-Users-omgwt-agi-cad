@@ -6,6 +6,7 @@ import { setAgentOverride, getSnapshot, recordOutcome } from '@/lib/routerWeight
 import { getFullProfile } from '@/lib/routerProfiles/profileStore'
 import { getPolicy, setPolicy } from '@/lib/routerProfiles/policyStore'
 import { computeRollingDelta, applyPolicyAdjustments } from '@/lib/routerProfiles/policyEngine'
+import { SemanticGovernor } from '@/core/semanticGovernor'
 
 export type RouteKind = 'echo' | 'fractal' | 'math' | 'sim'
 
@@ -18,6 +19,7 @@ type AgentMap = Record<RouteKind, any>
 
 export class IntelligenceRouter {
   private registry: AgentMap
+  private governor: SemanticGovernor
 
   constructor() {
     this.registry = {
@@ -26,6 +28,7 @@ export class IntelligenceRouter {
       math: MathwrightAgent,
       sim: SimwrightAgent,
     }
+    this.governor = new SemanticGovernor()
   }
 
   /**
@@ -58,6 +61,11 @@ export class IntelligenceRouter {
       ? (crypto as any).randomUUID()
       : `rt_${start}_${Math.floor(Math.random()*1e6)}`
     try {
+      // Governor vetting (lightweight)
+      const decision = await this.governor.vetRouteTask({ agent: rt.agent, payload: rt.payload })
+      if (!decision.allowed) {
+        throw new Error(`Route blocked by governor: ${decision.reason}`)
+      }
       let result: any
       switch (rt.agent) {
         case 'echo':
