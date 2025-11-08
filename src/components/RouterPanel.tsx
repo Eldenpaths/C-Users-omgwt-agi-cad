@@ -52,6 +52,7 @@ export default function RouterPanel() {
   const [profileUpdatedAt, setProfileUpdatedAt] = React.useState<number | null>(null)
   const [rewards, setRewards] = React.useState<RewardRecord[]>([])
   const [adaptive, setAdaptiveFlag] = React.useState<boolean>(true)
+  const [evolveMsg, setEvolveMsg] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     const es = new EventSource('/api/route?stream=1')
@@ -218,6 +219,22 @@ export default function RouterPanel() {
             <button className="px-2 py-1 rounded border hover:bg-gray-50 mr-2" onClick={() => fetch('/api/route?save=1')}>Save</button>
             <button className="px-2 py-1 rounded border hover:bg-gray-50 mr-2" onClick={() => fetch('/api/route?load=1')}>Load</button>
             <button className="px-2 py-1 rounded border hover:bg-gray-50" onClick={() => fetch('/api/route?reset=1')}>Reset</button>
+            <button className="ml-2 px-2 py-1 rounded border border-emerald-500 text-emerald-700 hover:bg-emerald-50" onClick={async () => {
+              try {
+                const { getAuthInstance } = await import('@/lib/firebase')
+                const auth = getAuthInstance()
+                const u = auth?.currentUser
+                if (!u) { setEvolveMsg('Sign in required to evolve'); return }
+                const token = await u.getIdToken()
+                const res = await fetch('/api/router/evolve', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+                const json = await res.json()
+                if (!res.ok || !json.ok) throw new Error(json.error || 'request failed')
+                const n = Array.isArray(json.updated) ? json.updated.length : 0
+                setEvolveMsg(`Evolution step complete · updated ${n} agents`)
+              } catch (e: any) {
+                setEvolveMsg(`Evolution failed: ${e?.message || 'error'}`)
+              }
+            }}>Evolve Now</button>
           </div>
         </div>
         <div className="mt-2">
@@ -249,6 +266,9 @@ export default function RouterPanel() {
           <div className="mt-2">
             <ProfileTrend rewards={rewards.slice(-50)} />
           </div>
+        )}
+        {evolveMsg && (
+          <div className="mt-2 text-xs text-emerald-700">{evolveMsg}</div>
         )}
         {operatorUid && rewards.length > 0 && (
           <ProfileAgentTrends rewards={rewards} />
