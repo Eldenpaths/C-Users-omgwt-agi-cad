@@ -6,31 +6,26 @@
  * GOOGLE_APPLICATION_CREDENTIALS or workload identity.
  */
 
-import * as admin from 'firebase-admin'
+import { initializeApp, applicationDefault, getApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { firestore } from 'firebase-admin';
 
-let inited = false
-
-export function ensureAdminApp() {
-  if (!inited) {
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-      })
+function getAdminApp() {
+    if (getApps().length) {
+        return getApp();
     }
-    inited = true
-  }
-  return admin.app()
+    return initializeApp({
+        credential: applicationDefault(),
+    });
 }
 
 export function getAdminDb() {
-  ensureAdminApp()
-  return admin.firestore()
+  return getFirestore(getAdminApp());
 }
 
 export function serverTimestamp() {
-  ensureAdminApp()
-  return admin.firestore.FieldValue.serverTimestamp()
+  return firestore.FieldValue.serverTimestamp();
 }
 
-export type AdminFirestore = admin.firestore.Firestore
+export type AdminFirestore = firestore.Firestore;
 
