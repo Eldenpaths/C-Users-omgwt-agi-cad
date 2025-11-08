@@ -110,3 +110,40 @@ export function useTelemetryFeed(agentId?: string) {
 
   return { data, loading, error };
 }
+/**
+ * Subscribe to Learning batch telemetry events (e.g., learning.batch.commit / learning.batch.error)
+ */
+export function useLearningBatchTelemetry(limitN: number = 20) {
+  const db = getFirestoreInstance();
+  const [data, setData] = useState<TelemetryRecord[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const qRef = useMemo(() => {
+    if (!db) return null;
+    const col = collection(db, 'telemetry');
+    const qy = query(col, orderBy('timestamp', 'desc'));
+    return qy;
+  }, [db]);
+
+  useEffect(() => {
+    if (!qRef) return;
+    setLoading(true);
+    const unsub = onSnapshot(
+      qRef,
+      (snap) => {
+        const rows: TelemetryRecord[] = [];
+        snap.forEach((doc) => {
+          const d = { id: doc.id, ...(doc.data() as DocumentData) } as any;
+          if (typeof d.event === 'string' && d.event.startsWith('learning.batch')) rows.push(d);
+        });
+        setData(rows.slice(0, limitN));
+        setLoading(false);
+      },
+      (err) => { setError(err as Error); setLoading(false); }
+    );
+    return () => unsub();
+  }, [qRef, limitN]);
+
+  return { data, loading, error };
+}

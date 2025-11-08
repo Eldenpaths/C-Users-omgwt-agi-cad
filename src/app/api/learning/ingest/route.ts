@@ -6,43 +6,81 @@ export const runtime = 'nodejs'
 
 /**
  * POST /api/learning/ingest
- * Body: { labType: LabType, data: unknown, enableEmbeddings?: boolean }
+ * Body options:
+ * - Single: { labType: LabType, data: unknown }
+ * - Batch:  { dataPoints: Array<{ labType: LabType, data: unknown }>} (up to many; commits in chunks of 500)
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const labType = LabType.parse(body?.labType)
-    const rawData = body?.data ?? body // allow direct payloads
+    const adminDb = getAdminDb()
 
-    // Validate experiment payload (throws on error)
-    const data = validateExperiment(labType, rawData) as any
+    if (Array.isArray(body?.dataPoints)) {
+      // Batch path
+      const points = body.dataPoints as Array<{ labType: LabType, data: unknown }>
+      if (!points.length) return NextResponse.json({ ok: false, error: 'Empty dataPoints' }, { status: 400 })
 
-    // Build a compact summary (duplicated from LearningCore to avoid client imports)
-    const base = `lab=${data.labType} success=${data.success ? '✓' : '✕'} runtimeMs=${data.runtimeMs}`
-    let summary = base
-    switch (data.labType) {
-      case 'plasma':
-        summary = `${base} T=${data.temperatureK}K ρ=${data.densityKgM3} conf=${data.confinementMethod}`
-        break
-      case 'spectral':
-        summary = `${base} λ=${data.wavelengthNm}nm I=${data.intensity} inst=${data.instrument}`
-        break
-      case 'chemistry':
-        summary = `${base} reagents=${data.reagents?.length ?? 0} T=${data.temperatureC}C yield=${data.yieldPercent ?? 'n/a'}%`
-        break
-      case 'crypto':
-        summary = `${base} algo=${data.algorithm} size=${data.inputSizeBytes}B thr=${data.throughputOpsSec ?? 'n/a'}`
-        break
+      const chunks: typeof points[] = []
+      for (let i = 0; i < points.length; i += 500) chunks.push(points.slice(i, i + 500))
+
+      let total = 0
+      let succeeded = 0
+      let failed = 0
+      const ids: string[] = []
+
+      for (const chunk of chunks) {
+        const batch = adminDb.batch()
+        const t0 = Date.now()
+        for (const item of chunk) {
+          const labType = item.labType
+          const data = validateExperiment(labType, item.data) as any
+          const ref = adminDb.collection('learning_sessions').doc()
+          batch.set(ref, { ...data, createdAt: serverTimestamp() })
+          ids.push(ref.id)
+        }
+        let attempt = 0
+        const delays = [100, 200, 400]
+        while (true) {
+          try {
+            await batch.commit()
+            const latency = Date.now() - t0
+            total += chunk.length; succeeded += chunk.length
+            await adminDb.collection('telemetry').add({
+              userId: 'batch', agentId: 'learning-core', labType: 'system', event: 'learning.batch.commit',
+              timestamp: serverTimestamp(), meta: { batchSize: chunk.length, latencyMs: latency, attempt }
+            })
+            break
+          } catch (e:any) {
+            attempt++
+            if (attempt > delays.length) {
+              total += chunk.length; failed += chunk.length
+              await adminDb.collection('telemetry').add({
+                userId: 'batch', agentId: 'learning-core', labType: 'system', event: 'learning.batch.error',
+                timestamp: serverTimestamp(), meta: { batchSize: chunk.length, error: e?.message }
+              })
+              throw e
+            }
+            await new Promise(r => setTimeout(r, delays[attempt-1]))
+          }
+        }
+      }
+      return NextResponse.json({ ok: true, total, succeeded, failed, ids })
     }
 
-    const adminDb = getAdminDb()
-    const docRef = await adminDb.collection('learning_sessions').add({
-      ...data,
-      summary,
-      createdAt: serverTimestamp(),
+    // Single path (backwards compatible)
+    const labType = LabType.parse(body?.labType)
+    const rawData = body?.data ?? body
+    const data = validateExperiment(labType, rawData) as any
+
+    const t0 = Date.now()
+    const docRef = await getAdminDb().collection('learning_sessions').add({ ...data, createdAt: serverTimestamp() })
+    const latency = Date.now() - t0
+    await adminDb.collection('telemetry').add({
+      userId: data.userId ?? 'unknown', agentId: data.agentId ?? 'unknown', labType, event: 'learning.write.single',
+      timestamp: serverTimestamp(), meta: { latencyMs: latency }
     })
 
-    return NextResponse.json({ ok: true, id: docRef.id, summary })
+    return NextResponse.json({ ok: true, id: docRef.id })
   } catch (e) {
     return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 })
   }
