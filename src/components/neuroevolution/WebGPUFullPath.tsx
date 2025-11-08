@@ -155,6 +155,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
       `;
 
       // Helper to create textures + pipelines with fallback
+      let chosenMode = 'unknown'
       async function createWithFallback(prefer16f: boolean) {
         const tryFormats = (prefer16f
           ? [['rgba16float','rg16float'], ['rgba8unorm','rg8unorm']]
@@ -174,6 +175,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
           }
         }
         if (!ok) { throw new Error('Failed to create compute pipelines for both 16f and 8bit formats'); }
+        chosenMode = (densityTex!.format === 'rgba16float' ? '16f' : '8bit')
       }
 
       await createWithFallback(true)
@@ -219,6 +221,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
 
       // Pipelines (compute + render)
       // Pipelines already created by fallback helper
+      try { console.log('[WebGPUFullPath] mode:', chosenMode, 'size:', size) } catch {}
 
       const heatmapVS = /* wgsl */`
         struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
@@ -443,7 +446,7 @@ export default function WebGPUFullPath({ points, palette, metricMode, minRange, 
       try { if (socket && socket.readyState === WebSocket.OPEN) socket.close() } catch {}
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [points, palette, metricMode, minRange, maxRange, size])
+  }, [points, palette, metricMode, minRange, maxRange, size, cellsProp, vectorScale])
 
   return (
     <div className="relative w-full h-[320px]">
