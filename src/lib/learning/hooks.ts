@@ -1,5 +1,5 @@
-/**
- * Learning Infrastructure Core � React Hooks
+﻿/**
+ * Learning Infrastructure Core — React Hooks
  *
  * Real-time Firestore hooks for learning sessions and telemetry streams.
  */
@@ -147,3 +147,4 @@ export function useLearningBatchTelemetry(limitN: number = 20) {
 
   return { data, loading, error };
 }
+

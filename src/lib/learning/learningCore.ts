@@ -1,4 +1,4 @@
-
+﻿
   /**
    * Batch ingest multiple records with Firestore writeBatch (500 writes max per batch).
    * Tracks latency and batch size telemetry, applies exponential backoff (100/200/400ms).
@@ -42,3 +42,4 @@
     }
     return { ids }
   }
+

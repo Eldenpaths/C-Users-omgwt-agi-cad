@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { LabType, validateExperiment } from '@/lib/learning'
 import { getAdminDb, serverTimestamp } from '@/lib/server/firebaseAdmin'
 
