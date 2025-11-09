@@ -69,15 +69,44 @@ export default function LearningPanel() {
         <div />
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-2">
+      <div className="grid grid-cols-4 gap-4 mb-4">
         <Stat label="Batch Writes" value={String(agg.totalWrites)} />
         <Stat label="Avg Latency" value={`${agg.avgLatencyMs} ms`} />
-        <Stat label="p95 Latency" value={`${agg.p95LatencyMs} ms`} />
-        <Stat label="Error Rate" value={`${(agg.errorRate * 100).toFixed(1)}%`} />
+        <Stat
+          label="p95 Latency"
+          value={`${agg.p95LatencyMs} ms`}
+          valueClassName={agg.p95LatencyMs < 100 ? 'text-emerald-400' : 'text-rose-400'}
+        />
+        <Stat
+          label="Error Rate"
+          value={`${(agg.errorRate * 100).toFixed(1)}%`}
+          valueClassName={agg.errorRate < 0.05 ? 'text-emerald-400' : 'text-rose-400'}
+        />
       </div>
 
+      {/* Telemetry Alerts */}
+      {(agg.p95LatencyMs >= 100 || agg.errorRate >= 0.05) && (
+        <div className="mb-4 space-y-2">
+          {agg.p95LatencyMs >= 100 && (
+            <div className="p-3 bg-rose-950/30 border border-rose-600/30 rounded-lg text-rose-400 text-xs flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-rose-400 rounded-full animate-pulse" />
+              <span>⚠️ P95 latency above target (100ms)</span>
+            </div>
+          )}
+          {agg.errorRate >= 0.05 && (
+            <div className="p-3 bg-rose-950/30 border border-rose-600/30 rounded-lg text-rose-400 text-xs flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-rose-400 rounded-full animate-pulse" />
+              <span>⚠️ Error rate above 5%</span>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mb-6">
-        <div className="text-xs text-amber-300/80 mb-2">Recent Batch Events</div>
+        <div className="text-xs text-amber-300/80 mb-2 flex items-center gap-2">
+          <span className="inline-block w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+          Recent Batch Events
+        </div>
         <ul className="text-sm divide-y divide-amber-500/10">
           {(batchEvents ?? []).slice(0, 5).map((event: any) => (
             <BatchEventListItem key={event.id} event={event} />
@@ -148,11 +177,11 @@ function BatchEventListItem({ event }: { event: any }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
   return (
-    <div className="rounded-lg border border-amber-500/20 p-3">
+    <div className="rounded-lg border border-amber-500/20 p-3 bg-amber-950/10">
       <div className="text-xs text-amber-300/80">{label}</div>
-      <div className="text-lg font-semibold text-amber-100">{value}</div>
+      <div className={`text-lg font-semibold font-mono ${valueClassName || 'text-amber-100'}`}>{value}</div>
     </div>
   );
 }

@@ -4,6 +4,11 @@
    pnpm tsx scripts/learningBatch.test.ts --base http://localhost:3000 --count 1000 --lab plasma
 */
 
+// Load environment variables from .env.local
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { getAdminDb } from '../src/lib/server/firebaseAdmin.js';
 
 type Args = { base: string; count: number; lab: 'plasma'|'spectral'|'chemistry'|'crypto' }
@@ -28,31 +33,36 @@ function rand(min: number, max: number) {
 }
 
 function makeData(lab: Args['lab']) {
+  const baseData = {
+    userId: 'smoke-user',
+    agentId: 'smoke-agent',
+    runId: `run-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    runtimeMs: Math.floor(rand(250, 2000)),
+    success: Math.random() > 0.15,
+  };
+
   switch (lab) {
     case 'plasma':
       return {
-        userId: 'smoke-user',
-        agentId: 'smoke-agent',
-        runtimeMs: Math.floor(rand(250, 2000)),
-        success: Math.random() > 0.15,
+        ...baseData,
         parameters: { temperatureK: Math.round(rand(1.0e6, 2.0e7)), density: Number(rand(0.1, 1.5).toFixed(2)) },
         measurements: { confinementTimeMs: Math.round(rand(50, 400)), energyOutputJ: Number(rand(1, 20).toFixed(2)) },
       }
     case 'spectral':
       return {
-        userId: 'smoke-user', agentId: 'smoke-agent', runtimeMs: Math.floor(rand(250, 2000)), success: Math.random() > 0.2,
+        ...baseData,
         parameters: { wavelengthNm: Math.round(rand(300, 800)), exposureMs: Math.round(rand(10, 200)), sensorGain: Number(rand(0.5, 2.0).toFixed(2)) },
         measurements: { peakIntensity: Number(rand(0.1, 1.0).toFixed(3)), snr: Number(rand(5, 40).toFixed(2)) },
       }
     case 'chemistry':
       return {
-        userId: 'smoke-user', agentId: 'smoke-agent', runtimeMs: Math.floor(rand(250, 2000)), success: Math.random() > 0.25,
+        ...baseData,
         parameters: { reagentA: 'A', reagentB: 'B', temperatureC: Math.round(rand(10, 80)) },
         measurements: { yieldPercent: Number(rand(20, 95).toFixed(1)), purityPercent: Number(rand(60, 99).toFixed(1)) },
       }
     case 'crypto':
       return {
-        userId: 'smoke-user', agentId: 'smoke-agent', runtimeMs: Math.floor(rand(50, 500)), success: Math.random() > 0.05,
+        ...baseData,
         parameters: { algorithm: 'sha256', payloadSizeBytes: Math.round(rand(256, 8192)), iterations: Math.round(rand(1, 10)) },
         measurements: { throughputOps: Math.round(rand(1e3, 5e4)), latencyMs: Math.round(rand(1, 50)), errorRate: Number(rand(0, 0.05).toFixed(3)) },
       }
@@ -62,16 +72,20 @@ function makeData(lab: Args['lab']) {
 async function cleanupTelemetry() {
     const db = getAdminDb();
     const telemetryRef = db.collection('telemetry');
-    const snapshot = await telemetryRef.where('userId', '==', 'smoke-user').get();
-    if (snapshot.empty) {
+    const userSnapshot = await telemetryRef.where('userId', '==', 'smoke-user').get();
+    const batchSnapshot = await telemetryRef.where('userId', '==', 'batch').get();
+    
+    if (userSnapshot.empty && batchSnapshot.empty) {
         return;
     }
+
     const batch = db.batch();
-    snapshot.docs.forEach(doc => {
-        batch.delete(doc.ref);
-    });
+    userSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+    batchSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+    
     await batch.commit();
-    console.log(`[BatchTest] Cleaned up ${snapshot.size} old telemetry events.`);
+    const totalDeleted = userSnapshot.size + batchSnapshot.size;
+    console.log(`[BatchTest] Cleaned up ${totalDeleted} old telemetry events.`);
 }
 
 async function testSingleWrite(url: string, lab: Args['lab']) {
@@ -123,7 +137,7 @@ async function main() {
   // Verify telemetry
   const db = getAdminDb();
   const telemetryRef = db.collection('telemetry');
-  const snapshot = await telemetryRef.where('userId', '==', 'smoke-user').where('event', '==', 'learning.batch.commit').get();
+  const snapshot = await telemetryRef.where('userId', '==', 'batch').where('event', '==', 'learning.batch.commit').get();
   
   const expectedBatches = Math.ceil(count / 500);
   if (snapshot.size === expectedBatches) {
@@ -143,6 +157,8 @@ async function main() {
       console.error(`[BatchTest] Performance check FAILED: p95 latency is ${p95Latency}ms, which is >= 100ms.`);
       process.exit(1);
   }
+
+  await cleanupTelemetry();
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })

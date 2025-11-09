@@ -1,5 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
-import { LabType, validateExperiment } from '@/lib/learning'
+import { LabType, validateExperiment } from '@/lib/learning/validator'
 import { getAdminDb, serverTimestamp } from '@/lib/server/firebaseAdmin'
 
 export const runtime = 'nodejs'
@@ -38,37 +38,62 @@ export async function POST(req: Request) {
           batch.set(ref, { ...data, createdAt: serverTimestamp() })
           ids.push(ref.id)
         }
+        
+        // Retry logic: 3 attempts with exponential backoff (100ms, 200ms, 400ms)
         let attempt = 0
+        const maxAttempts = 3
         const delays = [100, 200, 400]
-        while (true) {
+        
+        while (attempt < maxAttempts) {
           try {
             await batch.commit()
-            const latency = Date.now() - t0
-            total += chunk.length; succeeded += chunk.length
+            const duration = Date.now() - t0
+            total += chunk.length
+            succeeded += chunk.length
+            
+            // Console logging for monitoring
+            console.log(`[Firestore] Batch committed: ${chunk.length} writes in ${duration}ms${attempt > 0 ? ` (attempt ${attempt + 1})` : ''}`)
+            
+            // Telemetry logging
             await adminDb.collection('telemetry').add({
-              userId: 'batch', agentId: 'learning-core', labType: 'system', event: 'learning.batch.commit',
-              timestamp: serverTimestamp(), meta: { batchSize: chunk.length, latencyMs: latency, attempt }
+              userId: 'batch',
+              agentId: 'learning-core',
+              labType: 'system',
+              event: 'learning.batch.commit',
+              timestamp: serverTimestamp(),
+              meta: { batchSize: chunk.length, latencyMs: duration, attempt: attempt + 1 }
             })
             break
-          } catch (e:any) {
+          } catch (e: any) {
             attempt++
-            if (attempt > delays.length) {
-              total += chunk.length; failed += chunk.length
+            if (attempt >= maxAttempts) {
+              total += chunk.length
+              failed += chunk.length
+              console.error(`[Firestore] Batch failed after ${maxAttempts} attempts:`, e?.message)
+              
               await adminDb.collection('telemetry').add({
-                userId: 'batch', agentId: 'learning-core', labType: 'system', event: 'learning.batch.error',
-                timestamp: serverTimestamp(), meta: { batchSize: chunk.length, error: e?.message }
+                userId: 'batch',
+                agentId: 'learning-core',
+                labType: 'system',
+                event: 'learning.batch.error',
+                timestamp: serverTimestamp(),
+                meta: { batchSize: chunk.length, error: e?.message, attempts: maxAttempts }
               })
               throw e
             }
-            await new Promise(r => setTimeout(r, delays[attempt-1]))
+            console.warn(`[Firestore] Batch attempt ${attempt} failed, retrying in ${delays[attempt - 1]}ms...`)
+            await new Promise(r => setTimeout(r, delays[attempt - 1]))
           }
         }
       }
-      return NextResponse.json({ ok: true, total, succeeded, failed, ids })
+
+      console.log(`[Firestore] Batch processing complete. Total: ${total}, Succeeded: ${succeeded}, Failed: ${failed}, Success Rate: ${total > 0 ? (succeeded / total) * 100 : 100}%`);
+
+      return NextResponse.json({ ok: true, total, succeeded, failed, ids });
     }
 
     // Single path (backwards compatible)
-    const labType = LabType.parse(body?.labType)
+    const labType = body?.labType as LabType;
     const rawData = body?.data ?? body
     const data = validateExperiment(labType, rawData) as any
 

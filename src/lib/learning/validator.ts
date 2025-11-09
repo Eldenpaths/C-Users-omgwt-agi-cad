@@ -1,5 +1,5 @@
 /**
- * Learning Infrastructure Core — Validator
+ * Learning Infrastructure Core - Validator
  *
  * Provides Zod schemas and a single entry point `validateExperiment`
  * to validate experiment payloads coming from different labs before

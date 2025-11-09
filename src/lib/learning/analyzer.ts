@@ -1,5 +1,5 @@
 /**
- * Learning Infrastructure Core — Analyzer
+ * Learning Infrastructure Core - Analyzer
  *
  * Pulls past experiments and telemetry to compute aggregate metrics
  * such as success rate, average runtime, and error frequency.

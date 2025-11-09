@@ -164,6 +164,7 @@ export default function WebGPUFullPath({
       const [wgDX, wgDY] = computeOptimalWorkgroupSize(size, cellsProp, device.limits)
       const [wgGX, wgGY] = computeOptimalWorkgroupSize(size, cellsProp, device.limits)
       chosenWGRef.current = { d: wgDX, g: wgGX }
+      console.log(`[WebGPU] Using workgroup: ${wgDX} x ${wgDY} (density), ${wgGX} x ${wgGY} (gradient)`)
 
       // Create textures with fallback (16f -> 8bit)
       async function createWithFallback() {
@@ -182,6 +183,7 @@ export default function WebGPUFullPath({
             const gpipe = device!.createComputePipeline({ layout: 'auto', compute: { module: device!.createShaderModule({ code: gcs }), entryPoint: 'main' } })
             densityTex = d; gradientTex = g; densityPipeline = dpipe; gradientPipeline = gpipe
             chosenModeRef.current = mode
+            console.log(`[WebGPU] Compute mode: ${mode}`)
             return
           } catch (e) {
             // try next
@@ -520,8 +522,8 @@ export default function WebGPUFullPath({
       <canvas ref={canvasRef} className="w-full h-full block" />
       {/* Simple overlay placeholder; values are updated by refs in effect */}
       <div className="absolute top-1 right-1 text-[10px] px-2 py-1 bg-black/50 border border-white/10 rounded space-y-0.5 text-white">
-        <div>Res: {size}²</div>
-        {/* FPS/WG/s are approximated in effect; we can’t read refs directly here without state. */}
+        <div>Res: {size}ï¿½</div>
+        {/* FPS/WG/s are approximated in effect; we canï¿½t read refs directly here without state. */}
         <div>Note: FPS and WG/s overlays update live in console.</div>
       </div>
     </div>

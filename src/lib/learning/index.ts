@@ -1,5 +1,5 @@
 /**
- * Learning Infrastructure Core — Barrel
+ * Learning Infrastructure Core - Barrel Export
  *
  * The Learning subsystem coordinates experiment ingestion, validation,
  * telemetry, persistence, and analysis for AGI-CAD labs. It exposes:
