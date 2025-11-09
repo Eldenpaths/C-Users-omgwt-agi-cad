@@ -1,4 +1,0 @@
-*** Begin Patch
-*** Add File: src/lib/learning/validator.ts
-+test
-*** End Patch

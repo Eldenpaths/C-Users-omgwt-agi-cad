@@ -6,3 +6,13 @@ node_modules/
 .DS_Store
 
 .vercel
+
+# Firebase service account keys (NEVER commit these!)
+*firebase-adminsdk*.json
+service-account*.json
+
+# Phase 25 reference docs
+*.pdf
+*.jpg
+*.png
+temp-gemini-docs/
