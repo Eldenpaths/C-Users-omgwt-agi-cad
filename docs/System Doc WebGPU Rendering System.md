@@ -1,0 +1,8 @@
+WebGPU Rendering SystemOverviewThe WebGPU Rendering System provides a high-performance, low-level rendering backend for all visualization tasks, including the Nexus Graph and Science Labs. It replaces slower, DOM-based libraries like D3/Vis.js for large datasets.Status🔵 In ProgressFilessrc/components/webgpu/WebGPUCanvas.tsxsrc/hooks/useWebGPU.tssrc/core/rendering/WebGPURenderer.tssrc/shaders/nexus-graph.wgslsrc/shaders/plasma-lab.wgslComponents<WebGPUCanvas />: The core React component that mounts a canvas and initializes the renderer.API EndpointsN/A (Client-side system)Dependencies@webgpu/types: TypeScript definitions for the WebGPU API.Usageimport WebGPUCanvas from '@/components/webgpu/WebGPUCanvas';
+import { useNexusGraphRenderer } from '@/hooks/useWebGPU';
+
+function MyNexusPage({ nodes, edges }) {
+  const renderer = useNexusGraphRenderer(nodes, edges);
+  return <WebGPUCanvas renderer={renderer} />;
+}
+ConfigurationN/ATestingRun storybook for <WebGPUCanvas /> component.Verify rendering on Chrome, Firefox (Nightly), and Safari (Technology Preview).Known IssuesWebGPU is not universally supported across all browsers.Requires a fallback renderer (e.g., standard canvas) for incompatible clients.Memory management for buffers must be handled manually.Future EnhancementsIntegrate with Nexus Visualization to render graphs > 10,000 nodes.Use compute shaders for physics calculations in the Plasma Lab.

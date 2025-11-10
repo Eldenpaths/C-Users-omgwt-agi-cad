@@ -1,0 +1,8 @@
+Nexus VisualizationOverviewThe Nexus is the primary user interface for visualizing and interacting with the AGI-CAD's symbolic graph (GlyphNodes). It supports multiple layouts for different analytical tasks.Status✅ OperationalFilessrc/app/nexus/page.tsxsrc/components/nexus/NexusGraph.tsxsrc/components/nexus/NexusToolbar.tsxsrc/core/nexus/layouts.ts (Contains definitions for the 6 layouts)src/hooks/useGlyphNodes.tsComponents<NexusGraph />: The main graph rendering component.<NexusToolbar />: UI for selecting layouts, searching nodes, and triggering agents.API EndpointsN/A (Client-side system, loads data via Firebase hooks)Dependenciesvis-network (or d3-force): Current graph rendering library.firebase: For live-streaming GlyphNode[] data from Firestore.zustand: For managing global graph state (selected node, layout).Usageimport { useGlyphNodes } from '@/hooks/useGlyphNodes';
+import NexusGraph from '@/components/nexus/NexusGraph';
+
+function NexusPage() {
+  const { nodes, edges } = useGlyphNodes();
+  return <NexusGraph nodes={nodes} edges={edges} layout="force-directed" />;
+}
+ConfigurationN/ATestingManually test all 6 layouts (Force-Directed, Hierarchical, Semantic Cluster, etc.).Test graph performance by loading 1,000+ nodes.Known IssuesPerformance degrades significantly with > 1,000 nodes using vis-network.Layouts are not context-aware.Future EnhancementsCRITICAL: Replace vis-network with the WebGPU Rendering System for performance.Use the IntelligenceRouter to suggest the best layout based on the user's task.

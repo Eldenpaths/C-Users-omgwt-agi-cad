@@ -1,0 +1,8 @@
+Intelligence Router + Deep-Scan AgentsOverviewThe Intelligence Router is the "brainstem" of AGI-CAD. It receives all tasks as a SymbolicIntentionTree, logs them to the VAULT, and routes them to the correct specialized agent. The Deep-Scan agents (EchoArchivist, Fractalwright) are specialized agents that provide meta-analysis on the system itself.Status✅ OperationalFilessrc/core/router/IntelligenceRouter.tssrc/core/router/types.tssrc/core/router/fractalUtils.tssrc/agents/IAgent.tssrc/agents/echoArchivist.tssrc/agents/fractalwright.tssrc/agents/mathwright.tssrc/agents/simwright.tssrc/scripts/smokeAgents.tsComponentsN/A (Core system)API Endpoints/src/pages/api/router-test.ts/src/pages/api/agents/scan.ts/src/pages/api/agents/fractal.tsDependenciesfirebase (for VAULT/CANON logging)uuid (for agent task IDs)Usageimport { routeTask } from '@/core/router/IntelligenceRouter';
+
+// Route a task to the 'reason' (Claude) agent
+const result = await routeTask({
+  type: 'reason',
+  context: 'Summarize our FS-QMIX innovations.'
+});
+ConfigurationNEXT_PUBLIC_FIREBASE_... (All Firebase client keys)TestingRun the agent smoke test: pnpm ts-node src/scripts/smokeAgents.tsPOST to the API: curl -X POST -H "Content-Type: application/json" -d '{"type":"reason"}' http://localhost:3000/api/router-testKnown IssuesRouter logic is currently a simple switch statement.Does not yet dynamically route based on d_var or canon_constraints.Future EnhancementsFully implement the SymbolicIntentionTree logic.Integrate all core LLM agents (Codex, Cline, Gemini, Grok).Make routeTask dynamically update based on CANON rules.
