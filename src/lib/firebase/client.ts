@@ -1,123 +1,99 @@
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+// src/lib/firebase/client.ts
+// Client-side Firebase configuration
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import {
+  getAuth,
+  Auth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as firebaseSignOut
+} from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
-interface FirebaseInstance {
-  app: FirebaseApp;
-  auth: Auth;
-  db: Firestore;
+// Validate required environment variables
+const requiredEnvVars = [
+  'NEXT_PUBLIC_FIREBASE_API_KEY',
+  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+  'NEXT_PUBLIC_FIREBASE_APP_ID',
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
 }
 
-/**
- * Get initialized Firebase instance (client-side only)
- * Returns null if called on server-side (type-cast for build safety)
- */
-export function getFirebase(): FirebaseInstance {
-  // ⛔ Skip during server-side rendering
-  if (typeof window === "undefined") {
-    // Return null instead of throwing to allow builds to succeed
-    console.warn('getFirebase() called on server-side, returning null');
-    return null as any; // Type-cast to avoid breaking consumers
-  }
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
 
-  if (!app) {
-    const existingApp = getApps()[0];
+// Initialize Firebase (client-side only)
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let googleProvider: GoogleAuthProvider | undefined;
 
-    if (existingApp) {
-      app = existingApp;
-    } else {
-      // Validate environment variables
-      const requiredEnvVars = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      };
-
-      // Check for missing env vars
-      const missing = Object.entries(requiredEnvVars)
-        .filter(([_, value]) => !value)
-        .map(([key]) => key);
-
-      if (missing.length > 0) {
-        throw new Error(`Missing Firebase environment variables: ${missing.join(', ')}`);
-      }
-
-      app = initializeApp(requiredEnvVars);
-    }
-
-    auth = getAuth(app);
-    db = getFirestore(app);
-    console.log('✅ Firebase initialized:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-  }
-
-  return { app: app!, auth: auth!, db: db! };
+if (typeof window !== 'undefined') {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  auth = getAuth(app);
+  db = getFirestore(app);
+  googleProvider = new GoogleAuthProvider();
 }
 
-// Initialize immediately if on client side
-if (typeof window !== "undefined") {
+// Export auth helpers
+export const signInWithGoogle = async () => {
+  if (!auth || !googleProvider) {
+    throw new Error('Firebase auth not initialized - client-side only');
+  }
   try {
-    getFirebase();
+    const result = await signInWithPopup(auth, googleProvider);
+    return { user: result.user, error: null };
   } catch (error) {
-    console.error('❌ Firebase initialization failed:', error);
+    return { user: null, error };
   }
-}
+};
 
-/**
- * Get auth instance safely
- */
-export function getAuthInstance(): Auth {
-  const firebase = getFirebase();
-  if (!firebase) return null as any; // Return null during SSR/build, type-cast to avoid breaking consumers
-  return firebase.auth;
-}
-
-/**
- * Get Firestore instance safely
- */
-export function getDbInstance(): Firestore {
-  const firebase = getFirebase();
-  if (!firebase) return null as any; // Return null during SSR/build, type-cast to avoid breaking consumers
-  return firebase.db;
-}
-
-// Export getters for backward compatibility
-export { db, auth };
-
-/**
- * Google sign-in with popup blocked fallback
- */
-export async function signInWithGoogle() {
-  const auth = getAuthInstance();
-  const provider = new GoogleAuthProvider();
-
-  // Add extra scopes if needed
-  provider.addScope('profile');
-  provider.addScope('email');
-
+export const signOut = async () => {
+  if (!auth) {
+    throw new Error('Firebase auth not initialized - client-side only');
+  }
   try {
-    // Try popup first
-    const result = await signInWithPopup(auth, provider);
-    console.log('✅ Signed in via popup:', result.user.email);
-    return result;
-  } catch (error: any) {
-    console.warn('Popup sign-in failed:', error.code);
-
-    // If popup was blocked, try redirect
-    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
-      console.log('🔄 Falling back to redirect sign-in...');
-      await signInWithRedirect(auth, provider);
-      // Redirect will handle the rest
-      return null;
-    }
-
-    // Re-throw other errors
-    throw error;
+    await firebaseSignOut(auth);
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error };
   }
-}
+};
+
+// Helper functions for instance access
+export const getFirebase = () => {
+  if (!app) {
+    throw new Error('Firebase not initialized - client-side only');
+  }
+  return app;
+};
+
+export const getDbInstance = () => {
+  if (!db) {
+    throw new Error('Firestore not initialized - client-side only');
+  }
+  return db;
+};
+
+export const getAuthInstance = () => {
+  if (!auth) {
+    throw new Error('Firebase Auth not initialized - client-side only');
+  }
+  return auth;
+};
+
+export { app, auth, db, googleProvider };

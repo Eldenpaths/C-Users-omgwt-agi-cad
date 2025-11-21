@@ -8,11 +8,10 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { getDbInstance } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import ProfileTrend from '@/components/ProfileTrend'
+import ProfileAgentTrends from '@/components/ProfileAgentTrends'
 import PolicyControls from '@/components/PolicyControls'
 import { setAdaptive } from '@/lib/routerProfiles/profileStore'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
-
-import PolicyControls from '@/components/PolicyControls'
 
 type AgentStats = {
   agent: AgentId

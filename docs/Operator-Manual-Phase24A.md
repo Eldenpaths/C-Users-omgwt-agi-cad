@@ -1,4 +1,4 @@
-# Operator Manual — Phase 24A
+# Operator Manual ï¿½ Phase 24A
 
 This document captures the current operator commands, agent registry, and the latest smoke output.
 

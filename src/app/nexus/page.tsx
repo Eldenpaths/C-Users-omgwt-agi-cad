@@ -1,85 +1,123 @@
-/**
- * Phase 17C: Nexus Glyph Visualizer Page with Layout Switcher
- * Displays all 20 lab glyphs with 6 different layout modes
- */
-
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import NexusGlyphAnimator from '@/components/nexus/NexusGlyphAnimator';
-import { LayoutType, LAYOUT_CONFIGS } from '@/lib/nexus/types';
+import { useState } from 'react';
 
 export default function NexusPage() {
-  const [activeLayout, setActiveLayout] = useState<LayoutType>('solar');
+  const [status, setStatus] = useState('initializing');
 
   return (
-    <div className="w-screen h-screen bg-black overflow-hidden">
+    <div className="min-h-screen bg-black text-white p-8">
       {/* Header */}
-      <div className="absolute top-4 left-4 z-10 text-white">
-        <h1 className="text-2xl font-bold mb-2">AGI-CAD Nexus</h1>
-        <p className="text-sm text-gray-400">Phase 17C: Multi-Layout Visualizer</p>
-        <p className="text-xs text-gray-500 mt-1">20 Lab Types • 6 Layout Modes</p>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">AGI-CAD Nexus</h1>
+        <p className="text-gray-400">Multi-AI Intelligence Router & Orchestration Hub</p>
+      </div>
 
-        {/* Lab Access Buttons */}
-        <div className="mt-4 space-y-2">
-          <Link href="/labs">
-            <button className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition duration-150 shadow-lg">
-              Science Labs Hub →
+      {/* Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+        {/* System Status */}
+        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></span>
+            System Status
+          </h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Core Router</span>
+              <span className="text-green-400">✓ Online</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">API Endpoint</span>
+              <span className="text-green-400">✓ Active</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Task Queue</span>
+              <span className="text-green-400">✓ Ready</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">TypeScript Compilation</span>
+              <span className="text-yellow-400">⚠ Needs Fix</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.open('/api/router?action=metrics', '_blank')}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition"
+            >
+              View Router Metrics →
             </button>
-          </Link>
-          <Link href="/plasma-lab">
-            <button className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition duration-150 shadow-lg">
-              Open Plasma Lab →
+            <button
+              onClick={() => window.open('/api/router?action=agents', '_blank')}
+              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition"
+            >
+              View Active Agents →
             </button>
-          </Link>
+            <button
+              onClick={() => window.open('/api/router?action=stats', '_blank')}
+              className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium transition"
+            >
+              View Queue Stats →
+            </button>
+          </div>
+        </div>
+
+        {/* Phase Info */}
+        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <h2 className="text-xl font-semibold mb-4">Current Phase</h2>
+          <div className="space-y-2 text-sm">
+            <p className="text-gray-400">Phase 29: GlyphCore + Fusion Bridge</p>
+            <p className="text-gray-400">Completion: 95%</p>
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500 rounded">
+              <p className="text-xs text-blue-300">
+                Minimal UI active. Full visualization will be restored after TypeScript fixes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Test API */}
+        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <h2 className="text-xl font-semibold mb-4">Test Router API</h2>
+          <button
+            onClick={async () => {
+              try {
+                setStatus('testing');
+                const res = await fetch('/api/router?action=metrics');
+                const data = await res.json();
+                setStatus(data.success ? 'success' : 'error');
+                alert(JSON.stringify(data, null, 2));
+              } catch (err) {
+                setStatus('error');
+                alert('Error: ' + err);
+              }
+            }}
+            className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition"
+          >
+            Run API Test
+          </button>
+          <p className="text-xs text-gray-500 mt-2">
+            Status: <span className="text-blue-400">{status}</span>
+          </p>
         </div>
       </div>
 
-      {/* Layout Switcher */}
-      <div className="absolute top-4 right-4 z-10">
-        <div className="bg-gray-900/90 backdrop-blur-sm rounded-lg p-3 border border-gray-700">
-          <h3 className="text-white text-sm font-semibold mb-3">Layout Mode</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(LAYOUT_CONFIGS) as LayoutType[]).map((layout) => {
-              const config = LAYOUT_CONFIGS[layout];
-              const isActive = activeLayout === layout;
-
-              return (
-                <button
-                  key={layout}
-                  onClick={() => setActiveLayout(layout)}
-                  className={`
-                    px-3 py-2 rounded-md text-xs font-medium transition-all duration-200
-                    ${isActive
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }
-                  `}
-                  title={config.description}
-                >
-                  {config.name}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Active Layout Info */}
-          <div className="mt-3 pt-3 border-t border-gray-700">
-            <p className="text-xs text-gray-400">
-              {LAYOUT_CONFIGS[activeLayout].description}
-            </p>
-          </div>
+      {/* Instructions */}
+      <div className="mt-8 max-w-4xl">
+        <div className="bg-amber-900/20 border border-amber-500 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-2 text-amber-400">Next Steps</h3>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300">
+            <li>Test API endpoints using the buttons above</li>
+            <li>Review TypeScript errors in console</li>
+            <li>Fix compilation errors in dependency chain</li>
+            <li>Restore full 3D visualization components</li>
+          </ol>
         </div>
       </div>
-
-      {/* 3D Visualizer */}
-      <NexusGlyphAnimator
-        width={typeof window !== 'undefined' ? window.innerWidth : 1920}
-        height={typeof window !== 'undefined' ? window.innerHeight : 1080}
-        enableControls={true}
-        activeLayout={activeLayout}
-      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { getFirebase } from '../firebase/client';
+import { getDbInstance } from '../firebase/client';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 
 export interface NexusMetric {
@@ -66,8 +66,12 @@ class NexusAnalytics {
   private async flushMetrics(): Promise<void> {
     if (this.metricsCache.length === 0) return;
 
-    const { db } = getFirebase();
-    if (!db) return;
+    let db;
+    try {
+      db = getDbInstance();
+    } catch (error) {
+      return;
+    }
 
     const metricsToFlush = [...this.metricsCache];
     this.metricsCache = [];
@@ -112,8 +116,12 @@ class NexusAnalytics {
    * Get agent performance metrics
    */
   async getAgentPerformance(agentId: string, hours: number = 24): Promise<AgentPerformance | null> {
-    const { db } = getFirebase();
-    if (!db) return null;
+    let db;
+    try {
+      db = getDbInstance();
+    } catch (error) {
+      return null;
+    }
 
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
 
@@ -170,8 +178,12 @@ class NexusAnalytics {
    * Get system health metrics
    */
   async getSystemHealth(hours: number = 24): Promise<SystemHealth | null> {
-    const { db } = getFirebase();
-    if (!db) return null;
+    let db;
+    try {
+      db = getDbInstance();
+    } catch (error) {
+      return null;
+    }
 
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
 
@@ -245,8 +257,12 @@ class NexusAnalytics {
    * Get recent metrics for an agent
    */
   async getRecentMetrics(agentId: string, count: number = 100): Promise<NexusMetric[]> {
-    const { db } = getFirebase();
-    if (!db) return [];
+    let db;
+    try {
+      db = getDbInstance();
+    } catch (error) {
+      return [];
+    }
 
     try {
       const q = query(
@@ -271,8 +287,12 @@ class NexusAnalytics {
    * Get top performing agents
    */
   async getTopAgents(limit: number = 10): Promise<AgentPerformance[]> {
-    const { db } = getFirebase();
-    if (!db) return [];
+    let db;
+    try {
+      db = getDbInstance();
+    } catch (error) {
+      return [];
+    }
 
     try {
       const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);

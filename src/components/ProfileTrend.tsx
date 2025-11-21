@@ -2,7 +2,12 @@
 import React from 'react'
 import type { RewardRecord } from '@/lib/routerProfiles/profileTypes'
 
-type Props = {\n  rewards: RewardRecord[]\n  width?: number\n  height?: number\n  hoverT?: number\n}
+type Props = {
+  rewards: RewardRecord[]
+  width?: number
+  height?: number
+  hoverT?: number
+}
 
 export default function ProfileTrend({ rewards, width = 220, height = 48, hoverT }: Props) {
   const pad = 4

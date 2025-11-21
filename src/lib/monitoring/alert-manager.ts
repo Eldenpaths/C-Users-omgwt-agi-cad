@@ -2,7 +2,7 @@
 // Purpose: Monitor nexus_metrics and trigger alerts when thresholds exceeded
 // Architect: Claude Code (Sonnet 4.5)
 
-import { getFirebase } from '../firebase/client';
+import { getDbInstance } from '../firebase/client';
 import { collection, query, where, onSnapshot, orderBy, limit, Timestamp, addDoc } from 'firebase/firestore';
 import { nexusAnalytics, SystemHealth } from './nexus-analytics';
 
@@ -160,9 +160,11 @@ export class AlertManager {
       return;
     }
 
-    const { db } = getFirebase();
-    if (!db) {
-      console.error('[AlertManager] Firebase not initialized');
+    let db;
+    try {
+      db = getDbInstance();
+    } catch (error) {
+      console.error('[AlertManager] Firebase not initialized:', error);
       return;
     }
 
@@ -308,17 +310,15 @@ export class AlertManager {
     console.warn(`🚨 [AlertManager] ${alert.severity.toUpperCase()}: ${alert.message}`);
 
     // Save to Firestore
-    const { db } = getFirebase();
-    if (db) {
-      try {
-        const docRef = await addDoc(collection(db, 'nexus_alerts'), {
-          ...alert,
-          timestamp: Timestamp.fromDate(alert.timestamp)
-        });
-        alert.id = docRef.id;
-      } catch (error) {
-        console.error('[AlertManager] Failed to save alert:', error);
-      }
+    try {
+      const db = getDbInstance();
+      const docRef = await addDoc(collection(db, 'nexus_alerts'), {
+        ...alert,
+        timestamp: Timestamp.fromDate(alert.timestamp)
+      });
+      alert.id = docRef.id;
+    } catch (error) {
+      console.error('[AlertManager] Failed to save alert:', error);
     }
 
     // Update cooldown

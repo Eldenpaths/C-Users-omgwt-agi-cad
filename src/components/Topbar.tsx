@@ -1,21 +1,52 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { Menu, LogOut, BookOpenText } from 'lucide-react'
-import { signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { useAuth } from '@/lib/auth/AuthContext';
+import { signInWithGoogle, signOut } from '@/lib/firebase';
+import { Menu, LogOut, BookOpenText } from 'lucide-react';
+
 
 export interface TopbarProps {
   toggleSidebar?: () => void
 }
 
+
 export default function Topbar({ toggleSidebar }: TopbarProps) {
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth)
-    } catch (e) {
-      console.error('Sign out failed', e)
+  const { user, loading } = useAuth();
+
+  const renderAuthButton = () => {
+    if (loading) {
+      return (
+        <button disabled className="opacity-50 flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg">
+          <span className="text-sm">Loading...</span>
+        </button>
+      );
     }
+
+    if (user) {
+      return (
+        <button
+          onClick={async () => {
+            await signOut();
+            window.location.reload(); // Force reload after sign out
+          }}
+          className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="text-sm">Sign Out</span>
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={async () => {
+          await signInWithGoogle();
+        }}
+        className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+      >
+        <span className="text-sm">Sign in with Google</span>
+      </button>
+    );
   }
 
   return (
@@ -44,13 +75,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
           <span className="text-sm">24D Manual</span>
         </button>
       </div>
-      <button
-        onClick={handleSignOut}
-        className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
-      >
-        <LogOut className="w-4 h-4" />
-        <span className="text-sm">Sign Out</span>
-      </button>
+      {renderAuthButton()}
     </header>
   )
 }

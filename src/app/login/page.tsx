@@ -9,9 +9,10 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, Zap } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { signInWithGoogle } from '@/lib/firebase/client';
 
 export default function LoginPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   // Redirect if already logged in

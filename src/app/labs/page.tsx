@@ -12,6 +12,7 @@ import React from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { signOut } from '@/lib/firebase/client';
 import {
   Zap,
   Wind,
@@ -41,7 +42,7 @@ const iconMap: Record<string, any> = {
 
 export default function ScienceLabsHub() {
   const stats = getLabStats();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const handleSignOut = async () => {
     try {

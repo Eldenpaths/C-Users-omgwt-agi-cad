@@ -4,8 +4,7 @@
 // Status: Production - Hybrid Safe Mode Active
 
 import type { NextApiRequest } from "next";
-import { initAdmin } from "@/lib/firebaseAdmin";
-import { getAuth } from "firebase-admin/auth";
+import { adminAuth } from "@/lib/firebaseAdmin";
 
 export type VerifiedUser = {
   uid: string;
@@ -18,8 +17,7 @@ export type VerifiedUser = {
  * Replaces HMAC verification with Firebase Auth
  */
 export async function verifyFirebaseToken(req: NextApiRequest): Promise<{ valid: boolean; user?: VerifiedUser; error?: string }> {
-  initAdmin();
-  const auth = getAuth();
+  const auth = adminAuth;
 
   // Extract token from Authorization header
   const authHeader = req.headers.authorization;

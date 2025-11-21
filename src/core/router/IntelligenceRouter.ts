@@ -2,15 +2,10 @@ import { EchoArchivistAgent } from '@/agents/archivistAgent'
 import { FractalwrightAgent } from '@/agents/fractalwright'
 import { MathwrightAgent } from '@/agents/mathwright'
 import { SimwrightAgent } from '@/agents/simwright'
- { setAgentOverride } from '@/lib/routerWeights'
-import { getSnapshot, expectedUtility } from '@/lib/routerWeights'
-import { getFullProfile } from '@/lib/routerProfiles/profileStore'
+import { setAgentOverride, getSnapshot, expectedUtility, recordOutcome } from '@/lib/routerWeights'
+import { getFullProfile, updateProfile } from '@/lib/routerProfiles/profileStore'
 import { getPolicy, setPolicy } from '@/lib/routerProfiles/policyStore'
 import { computeRollingDelta, applyPolicyAdjustments } from '@/lib/routerProfiles/policyEngine'
-import { getSnapshot } from '@/lib/routerWeights'
-import { expectedUtility } from '@/lib/routerWeights'
-import { updateProfile } from '@/lib/routerProfiles/profileStore'
-import { recordOutcome } from '@/lib/routerWeights'
 
 export type RouteKind = 'echo' | 'fractal' | 'math' | 'sim'
 
@@ -77,7 +72,7 @@ export class IntelligenceRouter {
           throw new Error(`No route for ${rt.agent}`)
       }
       const latency = Date.now() - start
-      updateWeights(rt.agent, true, latency)
+      // updateWeights is deprecated, using recordOutcome instead
       try {
         recordOutcome({ taskId, agent: rt.agent.toString() as any, success: true, latencyMs: latency, at: Date.now() })
       } catch {}
@@ -87,12 +82,13 @@ export class IntelligenceRouter {
         if (uid) {
           const snap = getSnapshot()
           const stats = snap.agents[rt.agent as any]
-            try { const prof = await getFullProfile(String(uid)); const cfg = await getPolicy(String(uid)); const deltaAvg = computeRollingDelta(prof?.rewards || [], cfg.window); const snap2 = getSnapshot(); const adjusted = applyPolicyAdjustments({ ...snap2.agents }, deltaAvg, cfg); for (const key of Object.keys(adjusted)) { const bias = (adjusted as any)[key]?.bias; if (typeof bias === 'number') setAgentOverride(key as any, { bias }); } await setPolicy(String(uid), { lastAutoTune: Date.now() }); } catch {}\n        }
+            try { const prof = await getFullProfile(String(uid)); const cfg = await getPolicy(String(uid)); const deltaAvg = computeRollingDelta(prof?.rewards || [], cfg.window); const snap2 = getSnapshot(); const adjusted = applyPolicyAdjustments({ ...snap2.agents }, deltaAvg, cfg); for (const key of Object.keys(adjusted)) { const bias = (adjusted as any)[key]?.bias; if (typeof bias === 'number') setAgentOverride(key as any, { bias }); } await setPolicy(String(uid), { lastAutoTune: Date.now() }); } catch {}
+        }
       } catch {}
       return result
     } catch (e) {
       const latency = Date.now() - start
-      updateWeights(rt.agent, false, latency)
+      // updateWeights is deprecated, using recordOutcome instead
       try {
         recordOutcome({ taskId, agent: rt.agent.toString() as any, success: false, latencyMs: latency, at: Date.now() })
       } catch {}
@@ -101,7 +97,8 @@ export class IntelligenceRouter {
         if (uid) {
           const snap = getSnapshot()
           const stats = snap.agents[rt.agent as any]
-            try { const prof = await getFullProfile(String(uid)); const cfg = await getPolicy(String(uid)); const deltaAvg = computeRollingDelta(prof?.rewards || [], cfg.window); const snap2 = getSnapshot(); const adjusted = applyPolicyAdjustments({ ...snap2.agents }, deltaAvg, cfg); for (const key of Object.keys(adjusted)) { const bias = (adjusted as any)[key]?.bias; if (typeof bias === 'number') setAgentOverride(key as any, { bias }); } await setPolicy(String(uid), { lastAutoTune: Date.now() }); } catch {}\n        }
+            try { const prof = await getFullProfile(String(uid)); const cfg = await getPolicy(String(uid)); const deltaAvg = computeRollingDelta(prof?.rewards || [], cfg.window); const snap2 = getSnapshot(); const adjusted = applyPolicyAdjustments({ ...snap2.agents }, deltaAvg, cfg); for (const key of Object.keys(adjusted)) { const bias = (adjusted as any)[key]?.bias; if (typeof bias === 'number') setAgentOverride(key as any, { bias }); } await setPolicy(String(uid), { lastAutoTune: Date.now() }); } catch {}
+        }
       } catch {}
       throw e
     }

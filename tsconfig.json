@@ -39,6 +39,9 @@
   "exclude": [
     "node_modules",
     "tests",
-    "functions"
+    "functions",
+    "crypto-tracker",
+    "app",
+    "src/pages.OLD"
   ]
 }

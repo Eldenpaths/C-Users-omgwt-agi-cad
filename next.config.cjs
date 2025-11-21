@@ -18,6 +18,13 @@ const nextConfig = {
         'firebase-functions': 'commonjs firebase-functions'
       });
     }
+
+    // CRITICAL: Ignore crypto-tracker and root app directory to prevent routing conflicts
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/node_modules/**', '**/crypto-tracker/**', 'app/**']
+    };
+
     return config;
   },
 };

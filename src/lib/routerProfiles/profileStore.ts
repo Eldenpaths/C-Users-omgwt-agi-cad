@@ -9,7 +9,7 @@ async function getAdminDb(): Promise<FirebaseFirestore.Firestore | null> {
 }
 
 async function getClientDb(): Promise<import('firebase/firestore').Firestore> {
-  const mod = await import('@/lib/firebase')
+  const mod = await import('@/lib/firebase') as any
   return mod.getDbInstance()
 }
 
