@@ -1,26 +1,22 @@
 ﻿# AI Thread Archive - Export Status
 
 ## GPT Threads
-- [ ] (sum) Elden Paths game engine
+- [x] AGI-CAD architectural index (COMPLETE)
+- [x] AGI-CAD full code export (COMPLETE - 72 files)
 - [ ] (sum) Crypto trading dashboard
-- [ ] (sum) AGI-CAD Phase 19-24 work
-- [ ] (sum) Science lab prototypes
-- [ ] (sum) UI/UX design systems
-- [ ] (sum) [add your thread names]
+- [ ] (sum) Elden Paths game engine
+- [ ] (sum) Other projects
 
 ## Gemini Threads
 - [x] allcodebygemini.md (COMPLETE)
-- [ ] (sum) [any other Gemini threads?]
 
 ## Grok Threads
-- [x] Science labs (ORGANIZED in docs/labs)
-- [ ] (sum) [any other Grok threads?]
+- [x] Science labs (ORGANIZED in docs/labs - 8 labs)
 
 ## External Projects
-- [ ] Elden Paths (local folder: C:\...\elden-paths)
+- [ ] Elden Paths (location unknown)
 - [ ] PAC Fire designs
 - [ ] CosmoShabby portfolio
-- [ ] [other projects]
 
 ## Notes
 - Threads with (sum) prefix are archived
