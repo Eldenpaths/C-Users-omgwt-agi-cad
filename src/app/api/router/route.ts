@@ -7,6 +7,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { routingEngine } from '@/lib/router/routingEngine';
 import { taskQueueManager } from '@/lib/router/taskQueue';
 import { Task, Agent, TaskStatus } from '@/lib/router/taskTypes';
+import { registerAgents, getAllAgents } from '@/agents/nexus/AgentRegistry';
+
+let agentsInitialized = false;
+if (!agentsInitialized) {
+  console.log('🚀 Initializing agents...');
+  registerAgents();
+  agentsInitialized = true;
+}
 
 // ============================================================================
 // GET - Query Tasks and Agents
@@ -57,7 +65,9 @@ async function handleGetMetrics() {
 }
 
 async function handleGetAgents() {
-  const agents = routingEngine.getAllAgents();
+  console.log('📡 Handling agents request');
+  const agents = getAllAgents();
+  console.log('📡 Returning', agents.length, 'agents');
   return NextResponse.json({
     success: true,
     data: agents,
